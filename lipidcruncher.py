@@ -1,13 +1,16 @@
 import streamlit as st
 from multiapp import MultiApp
-from apps import home, quality_control, analysis # import your app modules here
+from apps import home, quality_control, analysis # import modules 
 
 app = MultiApp()
 
 st.markdown("""
 # LipidCruncher
 
-LipidCruncher is a web app built to perform lipidomics analysis on LipidSearch and LipidXplorer datasets. 
+In the context of lipidomics, the output of mass spectrometry is the relative abundance of the lipid species that make up the sample under study. 
+This output is in the form of a spectrum in which the peaks represent an identified lipid species and the area underneath each peak reperesnts the relative 
+abundance of the corresponding lipid species. There are two pieces of software that turn this spectrum into a lipidomics dataset: LipidSearch and LipidXplorer.
+LipidCruncher is a web app that allows the user to perform lipidomics analysis on the LipidSearch and LipidXplorer datasets. 
 
 """)
 
