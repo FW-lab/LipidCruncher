@@ -140,15 +140,14 @@ def app():
                 
             st.sidebar.subheader("Apply Built-in Filters")
             
-            passing_letter_grade = st.sidebar.number_input('Enter the minimum required main grade (i.e. how many A and/or B grades?)'
+            passing_letter_grade = st.sidebar.number_input('Enter the minimum required MainGrade score (i.e. how many A and/or B grades?)'
                                                            , min_value = 0, max_value = sum(rep_lst), value = 1, step = 1)
         
-            pval_tresh = st.sidebar.number_input('Enter the P-value threshold'
-                                                         , min_value = float(0.01), max_value = float(0.05), value = float(0.01), step = float(0.01))
+            pval_tresh = 0.001
             
             passing_pval_grade = st.sidebar.number_input(
-                    'Enter the minimum required P-value grade '
-                    '(i.e. how many replicates need to have a P-value smaller than the threshold?) '
+                    'Enter the minimum required PValue score '
+                    '(i.e. how many replicates need to have a p-value smaller than the threshold?) '
                                                          , min_value = 0, max_value = sum(rep_lst), value = 1, step = 1)
             
             st.sidebar.subheader('Apply Additional Filters')
@@ -1726,12 +1725,12 @@ def app():
                             The data cleaning process is a three steps process: 
                                 
                             1) LipidCruncher deletes the datapoints that do not pass through the filters: 
-                                either their associated "Rej" value is 1, or their main grade or P-value grade is lower than the set minimum.
+                                either their associated "Rej" value is 1, or their MainGrade or APvalue score is lower than the set minimum.
                             
                             2) LipidCruncher only keeps the relevant columns: "LipidMolec", "Class", "Calc Mass", "BaseRt", "MainArea[s1]", 
                                 ..., "MainArea[sN]". Where N is the total number of the samples.
                             
-                            3) LipidCruncher adds a column named 'old_index' to the cleaned dataset 
+                            3) LipidCruncher adds a column named "old_index" to the cleaned dataset 
                                 which refers to the index of the lipid species in the raw dataset.
                             
                             """)
@@ -1744,11 +1743,9 @@ def app():
                             
                             st.info("""
         
-                                The output of mass spectrumetry is the relative abundance of the lipids that exist in the sample 
-                                under study. This output is presented as a spectrum in which 
-                                Area Under the Curve (AUC) represents the relative abundance of the corresponding lipid species.
-                                In a standard LipidSearch dataset, columns "MainArea[s1]" to "MainArea[sN]" correspond to AUC
-                                for samples s1 to sN. 
+                                In a standard LipidSearch dataset, columns "MainArea[s1]" to "MainArea[sN]" correspond to Area 
+                                Under the Curve (AUC) representing the relative abundance of the lipid species 
+                                in samples s1 to sN. 
         
                                 """)
                         
@@ -1904,7 +1901,7 @@ def app():
                                 
                             2) LipidCruncher deletes the datapoints that do not pass through the applied filter.
                             
-                            3) LipidCruncher only keeps the relevant columns: "SPECIES", "FORMULA", "MASS", "ERROR", "CLASS",
+                            3) LipidCruncher only keeps the relevant columns: "SPECIES", "FORMULA", "MASS", "CLASS",
                                 "PRECURSORINTENSITY[s1]", ..., "PRECURSORINTENSITY[sN]". Where N is the total number of the samples.
                                 
                             4) To keep the naming convention consistent between LipidSearch and LipidXplorer, 
@@ -1913,7 +1910,7 @@ def app():
                                 to
                                 "MainArea[s1]", ..., "MainArea[sN]". 
                             
-                            5) LipidCruncher adds a column named 'old_index' to the cleaned dataset 
+                            5) LipidCruncher adds a column named "old_index" to the cleaned dataset 
                                 which refers to the index of the lipid species in the raw dataset.
                                 
                             6) LipidCruncher extracts the internal standards lipid species and puts them in a separate dataset.
@@ -1931,20 +1928,18 @@ def app():
                             
                             st.info("""
         
-                                The output of mass spectrumetry is the relative abundance of the lipids that exist in the sample 
-                                under study. This output is presented as a spectrum in which 
-                                Area Under the Curve (AUC) represents the relative abundance of the corresponding lipid species.
-                                In a cleaned LipidXplorer dataset, columns "MainArea[s1]" to "MainArea[sN]" correspond to AUC
-                                for samples s1 to sN. 
+                                In a cleaned LipidXplorer dataset, columns "MainArea[s1]" to "MainArea[sN]" correspond to Area 
+                                Under the Curve (AUC) representing the relative abundance of the lipid species 
+                                in samples s1 to sN. 
         
                                 """)
                         
                             st.info("""
                             
-                                    To plot the histograms of AUC, LipidCruncher turns all 0 values (i.e. missing values) to 1 
-                                    and then log-transforms the whole dataset. This allows the user to visualize what portion of the 
-                                    values are missing without affecting the distribution (as 1 is orders of magnitude smaller than 
-                                    the minimum detection threshold by mass spectrometry).
+                                To plot the histograms of AUC, LipidCruncher turns all 0 values (i.e. missing values) to 1 
+                                and then log-transforms the whole dataset. This allows the user to visualize what portion of the 
+                                values are missing without affecting the distribution (as 1 is orders of magnitude smaller than 
+                                the minimum detection threshold by mass spectrometry).
                         
                                 """)
                                 

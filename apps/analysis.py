@@ -3,7 +3,7 @@ from PIL import Image
 
 def app():
     
-    st.header('Visualization & Statistics Module')
+    st.header('Analysis & Hypothesis Testing Module')
 
     img = Image.open("under_construction.png")
     
