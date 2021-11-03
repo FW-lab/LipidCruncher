@@ -1464,6 +1464,8 @@ def app():
         
         #first filter
         
+        X['ERROR'] = pd.to_numeric(X['ERROR'], downcast="float")
+        
         X = X.loc[abs(X['ERROR']) < 5] # removes the datapoint if abs(error) > 5
         
         #second filter: minimum abundance grade 
