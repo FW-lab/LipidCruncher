@@ -1596,44 +1596,50 @@ def app():
     def cov_hover(df, sample_lst, dataset_type):  
             
         df['cov'] = df[['MainArea['+sample+']' for sample in sample_lst]].apply(lambda x: cov_calculator(x), axis=1)
-                
-        plot = figure(title='CoV - All lipid Species', x_axis_label='Lipid Species Index', y_axis_label='CoV(%)')
-                
-        x = df.index.values.tolist()
-                
+    
+        df['mean'] = df[['MainArea['+sample+']' for sample in sample_lst]].apply(lambda x: mean_calculator(x), axis=1)
+            
+        plot = figure(title='CoV - All lipid Species', x_axis_label='Mean of log10(AUC) Across All BQC Samples', y_axis_label='CoV(%)')
+            
+        x = df['mean'].values.tolist()
+            
         y = df['cov'].values.tolist()
         
+        max_y = int(np.max(y))
+    
         if dataset_type == 'LipidXplorer':
-        
+    
             species = df['SPECIES'].values.tolist()
-            
+        
         else:
-            
+        
             species = df['LipidMolec'].values.tolist()
-                
-        cov_df = pd.DataFrame({"index": x, "CoV": y, 'Species': species})
             
+        cov_df = pd.DataFrame({"Mean_AUC": x, "CoV": y, 'Species': species})
+        
         src = ColumnDataSource(cov_df)
-            
-        plot.scatter(x="index", y="CoV", name='cov', source=src)
         
-        plot.line(x=[i for i in range(len(X))], y=25, color='red')
-            
-        hover = HoverTool(tooltips = [('index', '@index'), ('CoV', "@CoV"), ('Species', "@Species")], names=['cov'])
-            
+        plot.scatter(x="Mean_AUC", y="CoV", name='cov', source=src)
+    
+        plot.line(x=[i for i in range(9)], y=25, color='red')
+        
+        plot.line(x=3, y=[i for i in range(max_y)], color='green')
+        
+        hover = HoverTool(tooltips = [('Mean_AUC', '@Mean_AUC'), ('CoV', "@CoV"), ('Species', "@Species")], names=['cov'])
+        
         plot.add_tools(hover)
-            
-        plot.title.text_font_size = "15pt"
-            
-        plot.xaxis.axis_label_text_font_size = "15pt"
-                
-        plot.yaxis.axis_label_text_font_size = "15pt"
-                
-        plot.xaxis.major_label_text_font_size = "15pt"
-                
-        plot.yaxis.major_label_text_font_size = "15pt"
         
-        return plot, cov_df 
+        plot.title.text_font_size = "15pt"
+        
+        plot.xaxis.axis_label_text_font_size = "15pt"
+            
+        plot.yaxis.axis_label_text_font_size = "15pt"
+            
+        plot.xaxis.major_label_text_font_size = "15pt"
+            
+        plot.yaxis.major_label_text_font_size = "15pt"
+    
+        return plot, cov_df  
     
     
     
@@ -1642,7 +1648,7 @@ def app():
     # calculate CoV
     def cov_calculator(numbers): 
         
-        non_zero_lst = [number for number in numbers if (number>1)]
+        non_zero_lst = [number for number in numbers if (number>0)]
         
         if len(non_zero_lst) > 0:
     
@@ -1650,9 +1656,30 @@ def app():
             
         else:
             
-            cov = 100
+            cov = None 
         
         return cov
+    
+    
+    
+    
+    
+    # calculate mean
+    def mean_calculator(numbers): 
+        
+        non_zero_lst = [number for number in numbers if (number>0)]
+        
+        if len(non_zero_lst) > 0:
+    
+            mean = np.mean(non_zero_lst)
+        
+            mean = np.log10(mean)
+            
+        else:
+            
+            mean = None
+        
+        return mean
     
     
     
@@ -1675,7 +1702,7 @@ def app():
     ##########################################################################################################################################
     # the main code of the app 
         
-    st.header("Quality Control Module")
+    st.header("Data Exploration & Quality Check Module")
         
     st.markdown("""
     
@@ -1838,31 +1865,6 @@ def app():
                             st.write('Run PCA to inspect the clustering of different samples:')
                     
                             plot_pca(X, rep_lst, cond_lst) # PCA analysis 
-                        
-                        st.subheader("Evaluate the Quality of Technical Replicates")
-                        
-                        expand_cov = st.beta_expander('Coefficient of Variation Analysis (CoV)')
-                    
-                        with expand_cov:
-                        
-                            st.info(""" 
-                                
-                                The coefficient of variation (CoV) is defined as the ratio of the standard deviation to the mean.
-                                It shows the extent of variability in relation to the mean of the population and is often expressed as a percentage.
-                                
-                                """)
-                                
-                            st.info(""" 
-                                
-                                Technical replicates are expected to be approximately identical. Therefore, the vast majority of the lipid species
-                                must have a very low CoV (i.e. CoV < 25%) across all the technical replicates.
-                                The red line in the CoV plot is the line of "25% CoV". 
-                                
-                                """)
-                                
-                            st.write('Run a CoV analysis to evaluate the quality of your technical replicates:')
-                    
-                            plot_cov(X, cond_lst, rep_lst, dataset_type)
                     
                     
     elif dataset_type == 'LipidXplorer':
@@ -2023,8 +2025,8 @@ def app():
                             st.info(""" 
                                 
                                 Technical replicates are expected to be approximately identical. Therefore, the vast majority of the lipid species
-                                must have a very low CoV (i.e. CoV < 25%) across all the technical replicates.
-                                The red line in the CoV plot is the line of "25% CoV". 
+                                with a abundance higher than the limit of detection must have a very low CoV (i.e. CoV < 25%).
+                                The red line in the CoV plot is the line of "25% CoV" and the green line is the "limit of detection" line.
                                 
                                 """)
                                 
