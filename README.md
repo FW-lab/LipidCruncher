@@ -9,11 +9,11 @@ The app is simple and intuitive. In order to try the app follow the steps below:
 2) Open the app and click on the "Data Exploration & Quality Check Module" from the navigation bar 
 3) Select "LipidSearch" as the type of your dataset 
 4) Upload the dataset
-5) Enter the inputs on the sidebar:
+5) Define the experiment by enter the inputs on the sidebar:
  
-   3 conditions: WT, KO, Control 
+   3 biological conditions: WT (Wild Type), KO (Knock Out), Control 
    
-   Each condition has 6 corresponding replicates
+   Each condition has 6 corresponding replicates (i.e. 6 samples per condition)
    
 6) In the "Apply Built-in Filters" section, set the minimum required MainGrade Score at 6 and skip to the end of the sidebar!
 7) Check the box at the end of the sidebar to confirm the inputs
