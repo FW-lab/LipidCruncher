@@ -9,7 +9,7 @@ The app is simple and intuitive. In order to try the app follow the steps below:
 2) Open the app and click on the "Data Exploration & Quality Check Module" from the navigation bar 
 3) Select "LipidSearch" as the type of your dataset 
 4) Upload the dataset
-5) Enter the inputson the sidebar:
+5) Enter the inputs on the sidebar:
  
    3 conditions: WT, KO, Control 
    
