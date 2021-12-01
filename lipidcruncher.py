@@ -16,7 +16,7 @@ LipidCruncher is a web app that allows the user to perform lipidomics analysis o
 
 # Add all your application here
 app.add_app("Home", home.app)
-app.add_app("Quality Control Module", quality_control.app)
-app.add_app("Analysis & Hypothesis Testing Module", analysis.app)
+app.add_app("Data Exploration & Quality Check Module", quality_control.app)
+app.add_app("Data Analysis & Hypothesis Testing Module", analysis.app)
 # The main app
 app.run()
