@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, HoverTool, Range1d
+from bokeh.models import ColumnDataSource, HoverTool
 import base64
 import matplotlib.pyplot as plt
 import seaborn as sns 
@@ -130,6 +130,10 @@ def app():
             
             passing_abundance_grade = ''
             
+            name_df = ''
+            
+            missing_ans = ''
+            
             # assing 'False' to confirm_data, so, the algorithm stops  
             
             confirm_data = False
@@ -137,6 +141,10 @@ def app():
         # if the inputs are valid
         
         else:
+            
+            st.sidebar.subheader('Group Samples')
+        
+            group_df = group_samples(df, cond_lst, rep_lst)
                 
             st.sidebar.subheader("Apply Built-in Filters")
             
@@ -155,6 +163,27 @@ def app():
             filter_mode, filtered_conds, passing_abundance_grade = input_filter_mode_cond_grade(cond_lst, rep_lst)
             
             st.sidebar.subheader("Confirm Inputs")
+
+        
+            st.sidebar.markdown('''
+                            
+                                LipidSearch names the samples as following: s1, s2, ..., sN. Where N is the total number of the samples. 
+                                However, there are cases where one or more samples are missing. An example is: s1, s2, s4, ..., s10.
+                                In that case, LipidCruncher updates the sample names as following: s1, s2, s3, ..., s9. 
+                            
+                                ''')
+                                
+            missing_ans = st.sidebar.radio('Do you have any missing samples?', ['Yes', 'No'], 1)
+            
+            name_df = update_sample_name(group_df)
+            
+            if missing_ans == 'Yes':
+                
+                st.sidebar.write('The table below shows the updated sample names.')
+        
+                st.sidebar.write(name_df)
+        
+            st.sidebar.write("Now, confirm your inputs:")
             
             st.sidebar.write("There are a total of "+str(sum(rep_lst))+" samples.")
             
@@ -164,7 +193,8 @@ def app():
             
             confirm_data = st.sidebar.checkbox("Confirm the inputs by checking this box")
             
-        return confirm_data, passing_letter_grade, pval_tresh, passing_pval_grade, filter_mode, filtered_conds, passing_abundance_grade, cond_lst, rep_lst
+        return confirm_data, missing_ans, name_df, passing_letter_grade, pval_tresh, passing_pval_grade, filter_mode, \
+               filtered_conds, passing_abundance_grade, cond_lst, rep_lst
     
     
     
@@ -475,13 +505,27 @@ def app():
     
     
     # function to apply filters to the LipidSearch data
-    def apply_filter_lipid_search(df, rep_lst, cond_lst, filter_mode, filtered_conds, passing_abundance_grade):  
+    def apply_filter_lipid_search(df, rep_lst, cond_lst, missing_ans, name_df, filter_mode, filtered_conds, passing_abundance_grade):  
         
             #first filter
             df = df.loc[df['Rej'] == 0] # removes the datapoint if 'Rej' = 1
         
             # second filter 
             total_reps = sum(rep_lst) # total number of all replicates 
+            
+            # if there are missing samples (i.g. s1, s2, s4, ..., sN where s3 is missing)
+            
+            if missing_ans == 'Yes':
+                
+                # updating the column names 
+                
+                for (sample_1, sample_2) in zip(name_df['old name'], name_df['updated name']):
+                    
+                        df.rename(columns={'MainArea['+sample_1+']': 'MainArea['+sample_2+']'}, inplace=True)
+                        
+                        df.rename(columns={'MainGrade['+sample_1+']': 'MainGrade['+sample_2+']'}, inplace=True)
+                        
+                        df.rename(columns={'APValue['+sample_1+']': 'APValue['+sample_2+']'}, inplace=True)
                 
             df['total_letter_grade'] = df[['MainGrade[s'+str(i+1)+']' for i in range(total_reps)]]\
             .apply(lambda x: letter_grade_calculator(x, passing_letter_grade),axis=1) # adds the 'total letter grade' column
@@ -776,25 +820,25 @@ def app():
     # plots a single retention time plot with hover tool
     def retention_hover(X, rep_lst, cond_lst, class_name):  
             
-            auc, retention, rep_label, index_lst = build_per_class_auc_retention_label_lst(X, cond_lst, rep_lst, class_name)
+            retention = X[X['Class'] == class_name]['BaseRt'].values.tolist()
             
-            retention_df = pd.DataFrame({"auc": np.log10(auc), "retention_time": retention, "label": rep_label, "index": index_lst})  
+            mass = X[X['Class'] == class_name]['Calc Mass'].values.tolist()
+            
+            species = X[X['Class'] == class_name]['LipidMolec'].values.tolist()
+            
+            retention_df = pd.DataFrame({"Mass": mass, "Retention": retention, "Species": species})
             
             # bokeh plot with hover tool
             src = ColumnDataSource(retention_df)
                 
-            plot = figure(title=class_name, x_axis_label='log10(AUC) - All Samples', y_axis_label='Retention Time (mins)')
+            plot = figure(title=class_name, x_axis_label='Calculated Mass', y_axis_label='Retention Time (mins)')
             
-            plot.scatter(x="auc", y="retention_time", source=src)
+            plot.scatter(x="Mass", y="Retention", source=src)
                 
             # hover tool
-            hover = HoverTool(tooltips = [('x', '@auc'), ('y', '@retention_time'), ('sample', '@label'), (('index', '@index'))])
+            hover = HoverTool(tooltips = [('Mass', '@Mass'), ('Retention_time', '@Retention'), ('Species', '@Species')])
             
             plot.add_tools(hover)
-                
-            plot.x_range = Range1d(0, 12)
-                
-            plot.y_range = Range1d(0, 70)
             
             plot.title.text_font_size = '15pt'
             
@@ -814,14 +858,12 @@ def app():
     # comparison mode - retention time plot 
     def retention_multi(X, rep_lst, selected_class): 
         
-        unique_color_lst =[ 'red', 'blue', 'green', 'magenta', 'cyan', 'orange', 'black', 'brown', 'yellow', 'purple']
-            
-        column_lst = ['MainArea[s' + str(i+1) + ']' for i in range(sum(rep_lst))] 
-        # Main Area column list
-            
-        auc = []
+        unique_color_lst =[ 'red', 'blue', 'green', 'magenta', 'cyan', 'orange', 'black', 'pink', 'brown', 'yellow', 'purple', \
+                            'gray', 'olive', 'chocolate', 'silver', 'darkred', 'khaki', 'skyblue', 'navy', 'orchid']
         
         retention = []
+        
+        mass = []
         
         class_lst = []
         
@@ -829,28 +871,22 @@ def app():
         
         for lipid_class in selected_class:
             
-            for column in column_lst:
-           
-                auc = auc + X[X['Class'] == lipid_class][column].values.tolist()
-           
-                retention = retention + X[X['Class'] == lipid_class]['BaseRt'].values.tolist()
-           
-                class_lst = class_lst + X[X['Class'] == lipid_class]['Class'].values.tolist()
-           
-                color_lst = color_lst + [unique_color_lst[selected_class.index(lipid_class)] for i in range(len(X[X['Class'] == lipid_class]))]
-                
-        retention_df = pd.DataFrame({"auc": np.log10(auc), "retention_time": retention, "class": class_lst, "color": color_lst})  
+            retention = retention + X[X['Class'] == lipid_class]['BaseRt'].values.tolist()
+            
+            mass = mass + X[X['Class'] == lipid_class]['Calc Mass'].values.tolist()
+            
+            class_lst = class_lst + X[X['Class'] == lipid_class]['Class'].values.tolist()
+            
+            color_lst = color_lst + [unique_color_lst[selected_class.index(lipid_class)] for i in range(len(X[X['Class'] == lipid_class]))]
+        
+        retention_df = pd.DataFrame({"Mass": mass, "Retention": retention, "Class": class_lst, "Color": color_lst})
             
         # bokeh plot with hover tool
         src = ColumnDataSource(retention_df)
-                
-        plot = figure(title='Retention Time - Comparison Mode', x_axis_label='log10(AUC) - All Samples', y_axis_label='Retention Time (mins)')
+        
+        plot = figure(title='Retention Time vs. Mass - Comparison Mode', x_axis_label='Calculated Mass', y_axis_label='Retention Time (mins)')
             
-        plot.scatter(x="auc", y="retention_time", legend_group='class', color='color', source=src)
-                
-        plot.x_range = Range1d(0, 12)
-                
-        plot.y_range = Range1d(0, 70)
+        plot.scatter(x="Mass", y="Retention", legend_group='Class', color='Color', source=src)
             
         plot.title.text_font_size = '15pt'
             
@@ -898,11 +934,13 @@ def app():
                     
                     lipid_class_lst = X['Class'].value_counts().index.tolist()
                     
-                    selected_class = st.multiselect('Add or remove classes (up to 10 classes):', lipid_class_lst, lipid_class_lst[:2])
+                    selected_class = st.multiselect('Add or remove classes (up to 20 classes):', lipid_class_lst, lipid_class_lst[:2])
                     
-                    if len(selected_class) > 10:
+                    if len(selected_class) > 20:
                         
-                        st.error('You can only compare up to 10 lipid classes at a time!')
+                        st.error('You can only compare up to 20 lipid classes at a time!')
+                        
+                        return None
                         
                     else:
                     
@@ -933,7 +971,7 @@ def app():
                     
             X = scale(X)
             
-            pca = decomposition.PCA(n_components=5)
+            pca = decomposition.PCA(n_components=3)
             
             pca.fit(X)
             
@@ -953,7 +991,7 @@ def app():
     
             df = df[['MainArea[s'+str(i+1)+']' for i in range(sum(rep_lst))] + ['Class']]
             
-            sample_lst = ['s'+str(i+1) for i in range(sum(rep_lst))]
+            full_sample_lst = ['s'+str(i+1) for i in range(sum(rep_lst))]
             
             show_pca = st.checkbox("Run Principal Component Analysis (PCA)")
             
@@ -963,15 +1001,17 @@ def app():
                 
                 if remove_ans == 'Yes':
                     
-                    r_sample = st.multiselect('Pick the sample(s) that you want to remove from the analysis', sample_lst)
+                    r_sample = st.multiselect('Pick the sample(s) that you want to remove from the analysis', full_sample_lst)
                     
-                    if (len(sample_lst) - len(r_sample)) >= 3:
+                    if (len(full_sample_lst) - len(r_sample)) >= 3:
                     
-                        rep_lst, cond_lst, df = update_df_cond_rep_sample_lst(cond_lst, rep_lst, sample_lst, r_sample, df)
+                        rep_lst, cond_lst, full_sample_lst, df = update_df_cond_rep_sample_lst(cond_lst, rep_lst, full_sample_lst, r_sample, df)
                         
                     else:
                         
                         st.error('At least three samples are required for a meanigful analysis!')
+                        
+                        return None
                         
                 filter_ans = st.radio("Would you like to filter by lipid class?", ['Yes', 'No'], 1)
                 
@@ -985,7 +1025,7 @@ def app():
             
                 scores, explained_variance = run_pca(df)
                 
-                PC_lst = ['PC'+str(i+1)+' ('+str("{:.0f}".format(explained_variance[i]*100))+'%)' for i in range(5)]
+                PC_lst = ['PC'+str(i+1)+' ('+str("{:.0f}".format(explained_variance[i]*100))+'%)' for i in range(3)]
                 
                 sel_PCx = st.selectbox('Pick the PC shown on the x-axis', PC_lst, 0)
                 
@@ -1037,7 +1077,7 @@ def app():
                     
                         color = color + [color_lst[cond_lst.index(cond)] for i in range(rep_lst_agg[cond_lst.index(cond)-1], rep_lst_agg[cond_lst.index(cond)])]
             
-                pca_df = pd.DataFrame({"PC1": x, "PC2": y, "sample": sample_lst, "legend": legend, "color": color})
+                pca_df = pd.DataFrame({"PC1": x, "PC2": y, "sample": full_sample_lst, "legend": legend, "color": color})
             
                 src = ColumnDataSource(pca_df)
             
@@ -1069,23 +1109,22 @@ def app():
     
     
     
-    # updates the datafraame and rep, cond, sample lists after removing a sample
-    def update_df_cond_rep_sample_lst(cond_lst, rep_lst, sample_lst, r_sample, df): 
+    # updates the datafraame and rep, cond, full_sample lists after removing a sample
+    def update_df_cond_rep_sample_lst(cond_lst, rep_lst, full_sample_lst, r_sample, df): 
         
         '''
         For example, if we have two conditions, A and B, with 3 replicates each, cond lst = [A, B]
-        and repl_lst = [3, 3]. The dataframe will have 6 columns and sample_lst = [s1, s2, s3] for A and 
-        [s4, s5, s6] for B. If we remove let's say s5, the following function will update the lists: 
-        cond_lst = [A, B], rep_lst = [3, 2], sample_lst = [s1, s2, s3] for A and [s4, s6] for B. The 
-        dataframe will have 5 columns. 
+        and repl_lst = [3, 3]. The dataframe will have 6 columns and full_sample_lst = [s1, s2, s3, s4, s5, s6].
+        If we remove let's say s5, the following function will update the lists: 
+        cond_lst = [A, B], rep_lst = [3, 2], full_sample_lst = [s1, s2, s3, s4, s6]. The dataframe will have 5 columns. 
         
         '''
         
-        df.drop(['MainArea[' + sample + ']' for sample in r_sample], axis=1, inplace=True)
+        df.drop(['MainArea[' + sample + ']' for sample in r_sample], axis=1, inplace=True) # updating df
         
         for sample in r_sample: # r_sample is the list of removed samples 
         
-            sample_lst.remove(sample)
+            full_sample_lst.remove(sample) # updating full_sample_lst
         
         r_sample = [int(item[1:]) for item in r_sample] # separates string and number (e.g. extracts 11 from s11)
         
@@ -1093,7 +1132,7 @@ def app():
         
         used_sample = [] # useful list to avoid overwriting a sample multiple times 
         
-        r_sample_cond_index = []
+        r_sample_cond_index = [] # lst including the index of the condition that corresponds to the removed sample 
         
         for sample_number in r_sample:
             
@@ -1107,20 +1146,20 @@ def app():
                     
         for index in r_sample_cond_index:
             
-            rep_lst[index] = rep_lst[index] - 1
+            rep_lst[index] = rep_lst[index] - 1 # updating rep_lst
             
-        cond_lst = [cond for cond in cond_lst if rep_lst[cond_lst.index(cond)] != 0]
+        cond_lst = [cond for cond in cond_lst if rep_lst[cond_lst.index(cond)] != 0] # removing cond with zero corresponding reps 
             
-        rep_lst = [rep for rep in rep_lst if rep !=0]
+        rep_lst = [rep for rep in rep_lst if rep !=0] # remoing 0's from rep_lst
         
-        return rep_lst, cond_lst, df
+        return rep_lst, cond_lst, full_sample_lst, df
     
     
     
     
     
-    # building LipidXplorer dataframe 
-    def build_lipidxplorer_df(lipid_xplorer):
+    # building LipidXplorer dataframe (only positive or negative mode)
+    def build_single_lipidxplorer_df(lipid_xplorer):
         
         with open(lipid_xplorer.name, "wb") as f:
             
@@ -1132,8 +1171,6 @@ def app():
             
             row1 = next(reader)
             
-            st.write()
-            
             if 'SPECIES' in row1[0]:
                 
                 df = pd.read_csv(lipid_xplorer.name)
@@ -1141,12 +1178,126 @@ def app():
                 if ('FORMULA' and 'MASS' and 'ERROR') in df.columns.values.tolist():
                 
                     return df
+                
+                else: 
+                    
+                   st.sidebar.error('This is not a valid LipidXplorer dataset!')
+                
+                   return None 
             
             else:
                 
                 st.sidebar.error('This is not a valid LipidXplorer dataset!')
                 
                 return None
+            
+            
+            
+            
+            
+    # building LipidXplorer dataframe (merging positive and negatve modes)
+    def build_merged_lipidxplorer_df(pos_df, neg_df):
+        
+        st.sidebar.info("""
+                        
+                        *Merging process*: In the positive-mode dataset, we only keep the lipids that belong to 
+                        the following classes: Cer, HexCer, DAG, CE, LPC, LPC-O, PC, PC-O, SM and TG.
+                        In the negative-mode dataset, we only keep the lipids that belong to 
+                        the following classes: LPA, LPE, PE, PE-O, PA, PI, PG, PS. Then, we merge the two datasets.
+                        
+                        """)
+        
+        pos_class = ['Cer', 'HexCer', 'DAG', 'CE', 'LPC', 'LPC-O', 'PC', 'PC O-', 'PC-O', 'SM', 'TG']
+        
+        neg_class = ['LPA', 'LPE', 'PE', 'PE-O', 'PA', 'PI', 'PG', 'PS']
+
+        pos_cols = ['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']
+        
+        neg_cols = ['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']
+        
+        # if both datasets are uploaded 
+        
+        if (pos_df is not None) and (neg_df is not None):
+        
+            pos_df = pos_df.loc[pos_df['CLASS'].isin(pos_class)]
+            
+            for column in pos_df:
+                
+                if 'PRECURSORINTENSITY' in column:
+                    
+                    pos_cols.append(column)
+            
+            pos_df = pos_df[pos_cols]
+            
+            neg_df = neg_df.loc[neg_df['CLASS'].isin(neg_class)]
+            
+            for column in neg_df:
+                
+                if 'PRECURSORINTENSITY' in column:
+                    
+                    neg_cols.append(column)
+            
+            neg_df = neg_df[neg_cols]
+            
+            # if the two datasets have different number of columns (i.e samples)
+            
+            if len(pos_cols) != len(neg_cols):
+                
+                st.sidebar.error("""
+                                 
+                                 The two datasets must represent the same number of samples (i.e. equal number of 'PRECURSORINTENSITY' columns),
+                                 otherwise merging is not possible.
+                                 The datasets you uploaded do not satisfy the above condition!  
+                                 
+                                 """)
+                                 
+                return None
+            
+            else:
+            
+                unmatch_cols_dict = {'positive' : [], 'negative' : []} # includes the columns with un-matching names between the two datasets 
+                
+                counter = 0
+            
+                for i in range(len(pos_cols)):
+                    
+                    if pos_cols[i] != neg_cols[i]:
+                        
+                        counter = counter + 1
+                        
+                        unmatch_cols_dict['positive'].append(pos_cols[i])
+                        
+                        unmatch_cols_dict['negative'].append(neg_cols[i])
+                        
+                # if there are no columns with un-matching names 
+                
+                if counter == 0:
+            
+                    df = pd.concat([pos_df, neg_df])
+            
+                    return df
+            
+                # if there are columns with un-matching names 
+                
+                elif counter > 0:
+                
+                    st.sidebar.error("""
+                                 
+                                 The corresponding columns in both datasets must have the EXACT same name, otherwise merging is not possible.
+                                 Look at the table below to find out which column names are not matching and correct the column names accordingly
+                                 (use the "view full screen" option if necessary).
+                                 
+                                 """)
+                                 
+                    unmatch_cols_df = pd.DataFrame.from_dict(unmatch_cols_dict)
+                
+                    st.sidebar.write(unmatch_cols_df)
+                
+                    return None
+        
+        else:
+            
+            return None
     
     
     
@@ -1170,7 +1321,7 @@ def app():
             
             if 'PRECURSORINTENSITY' in column:
                 
-                counter = counter + 1 
+                counter = counter + 1
                 
         # if inputs are not valid
                 
@@ -1241,7 +1392,7 @@ def app():
             index = cond_lst.index(cond)
             
             extensive_cond_lst += [cond for i in range(rep_lst[index])]
-                
+
         group_dict = {'sample name' : [], 'condition' : []}
         
         column_lst = df.columns.values.tolist()
@@ -1250,7 +1401,7 @@ def app():
     
         for column in column_lst:
     
-            if 'PRECURSORINTENSITY' in column:
+            if (dataset_type == 'LipidXplorer') and ('PRECURSORINTENSITY' in column):
     
                 a = column.split(':')
                 
@@ -1259,7 +1410,21 @@ def app():
                 group_dict['sample name'].append(b[0])  
                 
                 counter = counter+1
-                
+                    
+            elif (dataset_type == 'LipidSearch') and ('MainArea[' in column) and (column != 'MainArea[c]'):
+            
+                group_dict['sample name'].append(column[9 : -1])
+        
+        # puts the columns in a sorted order  
+        
+        if dataset_type == 'LipidSearch':
+            
+            group_dict['sample name'] = [int(item[1:]) for item in group_dict['sample name']]
+            
+            group_dict['sample name'].sort()
+            
+            group_dict['sample name'] = ['s'+str(item) for item in group_dict['sample name']]
+            
         for cond in extensive_cond_lst:
             
             group_dict['condition'].append(cond)
@@ -1584,7 +1749,7 @@ def app():
                 
                     st.bokeh_chart(X_plot)
                 
-                    csv_downloader(X_cov_df['CoV'], 'CoV_All_Lipid_Species')
+                    csv_downloader(X_cov_df, 'CoV_All_Lipid_Species')
                 
         return
     
@@ -1728,9 +1893,9 @@ def app():
                     
                     # building the side bar 
                 
-                    confirm_data,  passing_letter_grade, pval_tresh, passing_pval_grade, filter_mode, \
+                    confirm_data, missing_ans, name_df, passing_letter_grade, pval_tresh, passing_pval_grade, filter_mode,\
                         filtered_conds, passing_abundance_grade, cond_lst, rep_lst = build_sidebar_lipid_search(df)
-            
+                        
                     # if user confirms the inputs:
             
                     if confirm_data:
@@ -1764,7 +1929,7 @@ def app():
                             
                             """)
                     
-                            X = apply_filter_lipid_search(df, rep_lst, cond_lst, filter_mode, filtered_conds, passing_abundance_grade) # cleaned data 
+                            X = apply_filter_lipid_search(df, rep_lst, cond_lst, missing_ans, name_df, filter_mode, filtered_conds, passing_abundance_grade) # cleaned data 
                             
                         expand_hist = st.beta_expander("Distributions of the Area Under the Curve (AUC)")
                         
@@ -1798,9 +1963,9 @@ def app():
                             st.info("""
                                 
                                 The retention time of a lipid species is a function of its degree of hydrophobicity. 
-                                The more hydrophobic the lipid species, the longer the retention time. 
-                                Separate cluters of lipid species within one certain lipid class 
-                                "might" be a sign of misclassification of some of those lipid species by LipidSearch.
+                                The more hydrophobic the lipid species, the longer the retention time. When retention time is 
+                                plotted versus molecular mass, lipid species tend to form separate clusters based upon which lipid clas they belong to. 
+                                This plot (comparison mode) is a useful tool for detecting misidentified lipid species. 
                                 
                                 """)
                             
@@ -1854,10 +2019,7 @@ def app():
                                 A plot of the top two principal components (PC1 and PC2) against each other is the best way to inspect the clustering 
                                 of different samples. This is because the PC's are ordered based on how much of the variability in the data 
                                 they can explain (i.e. PC1 is the PC with the highest variance explained ratio, PC2 is the PC with the second highest 
-                                variance expalined ratio and so on). However, LipidCruncher provides the user with the top five PC's and their corresponding
-                                varianve explained percentages. This is useful if PC's other than PC1 and PC2
-                                also explain a significant portion of the variance in the data. For example, if PC1, PC2 and PC3 explain 
-                                30%, 28% and 25% of the variance in the data respectively, a plot of PC1 vs. PC3 and PC2 vs. PC3 could also be informative. 
+                                variance expalined ratio and so on).
                                  
                                 
                                 """)
@@ -1869,170 +2031,205 @@ def app():
                     
     elif dataset_type == 'LipidXplorer':
         
-        st.sidebar.subheader("Upload Data")
-            
-        lipid_xplorer = st.sidebar.file_uploader(label='Upload your LipidXplorer dataset', type=['csv'])
+        st.sidebar.subheader('Select Mode')
         
-        if lipid_xplorer is not None:
+        mode = st.sidebar.radio('', ['Only positive or negative mode', 'Merge positive and negative modes'])
+        
+        st.sidebar.subheader("Upload Data")
+        
+        if mode == 'Only positive or negative mode':
             
-            df = build_lipidxplorer_df(lipid_xplorer)
+            lipid_xplorer = st.sidebar.file_uploader(label='Upload your LipidXplorer dataset', type=['csv'])
             
-            if df is not None:
+            lipid_xplorer_pos = None
             
-                confirm_data, cond_lst, rep_lst, group_df, filter_mode, filtered_conds, passing_abundance_grade = build_sidebar_lipid_xplorer(df)
+            lipid_xplorer_neg = None
             
-                if confirm_data:
-                    
-                        st.subheader("Scan & Visualize Data")
-                    
-                        expand_raw_data = st.beta_expander("Raw Data")
+            if lipid_xplorer is not None:
             
-                        with expand_raw_data:
-                            
-                            st.write('View the raw data:')
+                df = build_single_lipidxplorer_df(lipid_xplorer)
                 
-                            st.write(df)
+            else: 
+                
+                df = None
+            
+        elif mode == 'Merge positive and negative modes':
+            
+            lipid_xplorer_pos = st.sidebar.file_uploader(label='Upload your LipidXplorer dataset in POSITIVE mode', type=['csv'])
+            
+            lipid_xplorer_neg = st.sidebar.file_uploader(label='Upload your LipidXplorer dataset in NEGATIVE mode', type=['csv'])
+            
+            lipid_xplorer = None
+            
+            if lipid_xplorer_pos is not None:
+                
+                pos_df = build_single_lipidxplorer_df(lipid_xplorer_pos)
+                
+            if lipid_xplorer_neg is not None:
+                
+                neg_df = build_single_lipidxplorer_df(lipid_xplorer_neg)
+        
+            if (lipid_xplorer_pos is not None) and (lipid_xplorer_neg is not None):
+            
+                df = build_merged_lipidxplorer_df(pos_df, neg_df)
+                
+            else:
+                
+                df = None
+
+        if df is not None:
+            
+            confirm_data, cond_lst, rep_lst, group_df, filter_mode, filtered_conds, passing_abundance_grade = build_sidebar_lipid_xplorer(df)
+            
+            if confirm_data:
+                    
+                st.subheader("Scan & Visualize Data")
+                    
+                expand_raw_data = st.beta_expander("Raw Data")
+            
+                with expand_raw_data:
                             
-                        expand_clean_data = st.beta_expander('Cleaned Data')
+                    st.write('View the raw data:')
+                
+                    st.write(df)
+                            
+                expand_clean_data = st.beta_expander('Cleaned Data')
                         
-                        with expand_clean_data:
+                with expand_clean_data:
                             
-                            st.info("""
+                    st.info("""
                             
-                            The data cleaning process is a six steps process: 
+                        The data cleaning process is a six steps process: 
                                 
-                            1) LipidCruncher removes the empty rwos and deletes the duplicated datapoints.  
+                        1) LipidCruncher removes the empty rwos and deletes the duplicated datapoints.  
                                 
-                            2) LipidCruncher deletes the datapoints that do not pass through the applied filter.
+                        2) LipidCruncher deletes the datapoints that do not pass through the applied filter.
                             
-                            3) LipidCruncher only keeps the relevant columns: "SPECIES", "FORMULA", "MASS", "CLASS",
-                                "PRECURSORINTENSITY[s1]", ..., "PRECURSORINTENSITY[sN]". Where N is the total number of the samples.
+                        3) LipidCruncher only keeps the relevant columns: "SPECIES", "FORMULA", "MASS", "CLASS",
+                            "PRECURSORINTENSITY[s1]", ..., "PRECURSORINTENSITY[sN]". Where N is the total number of the samples.
                                 
-                            4) To keep the naming convention consistent between LipidSearch and LipidXplorer, 
-                                LipidCruncher changes the name of the following columns from
-                                "PRECURSORINTENSITY[s1]", ..., "PRECURSORINTENSITY[sN]"
-                                to
-                                "MainArea[s1]", ..., "MainArea[sN]". 
+                        4) To keep the naming convention consistent between LipidSearch and LipidXplorer, 
+                            LipidCruncher changes the name of the following columns from
+                            "PRECURSORINTENSITY[s1]", ..., "PRECURSORINTENSITY[sN]"
+                            to
+                            "MainArea[s1]", ..., "MainArea[sN]". 
                             
-                            5) LipidCruncher adds a column named "old_index" to the cleaned dataset 
-                                which refers to the index of the lipid species in the raw dataset.
+                        5) LipidCruncher adds a column named "old_index" to the cleaned dataset 
+                            which refers to the index of the lipid species in the raw dataset.
                                 
-                            6) LipidCruncher extracts the internal standards lipid species and puts them in a separate dataset.
-                                An internal standard is a lipid that is added in a known constant amount to the samples.
-                                As the rate of spraying the lipids in shotgun method is not constant, calibration is required. 
-                                Internal standard lipids can be used for calibration purposes.
+                        6) LipidCruncher extracts the internal standards lipid species and puts them in a separate dataset.
+                            An internal standard is a lipid that is added in a known constant amount to the samples.
+                            As the rate of spraying the lipids in shotgun method is not constant, calibration is required. 
+                            Internal standard lipids can be used for calibration purposes.
                             
+                        """)
+                        
+                    X, intsta_df = apply_filter_lipid_xplorer(df, group_df, rep_lst, cond_lst, filter_mode, filtered_conds, passing_abundance_grade) # cleaned data
+                    
+                expand_hist = st.beta_expander('Distributions of the Area Under the Curve (AUC)')
+                    
+                with expand_hist:
+                            
+                        st.info("""
+        
+                            In a cleaned LipidXplorer dataset, columns "MainArea[s1]" to "MainArea[sN]" correspond to Area 
+                            Under the Curve (AUC) representing the relative abundance of the lipid species 
+                            in samples s1 to sN. 
+    
                             """)
                         
-                            X, intsta_df = apply_filter_lipid_xplorer(df, group_df, rep_lst, cond_lst, filter_mode, filtered_conds, passing_abundance_grade) # cleaned data
-                    
-                        expand_hist = st.beta_expander('Distributions of the Area Under the Curve (AUC)')
-                    
-                        with expand_hist:
+                        st.info("""
                             
-                            st.info("""
-        
-                                In a cleaned LipidXplorer dataset, columns "MainArea[s1]" to "MainArea[sN]" correspond to Area 
-                                Under the Curve (AUC) representing the relative abundance of the lipid species 
-                                in samples s1 to sN. 
-        
-                                """)
+                            To plot the histograms of AUC, LipidCruncher turns all 0 values (i.e. missing values) to 1 
+                            and then log-transforms the whole dataset. This allows the user to visualize what portion of the 
+                            values are missing without affecting the distribution (as 1 is orders of magnitude smaller than 
+                            the minimum detection threshold by mass spectrometry).
                         
-                            st.info("""
+                            """)
+                                
+                        st.write(""" Visualize the distribution of AUC's in any of the replicates and compare with other replicates: """)
+                    
+                        plot_hist(X, rep_lst, cond_lst) # histograms of AU
+                    
+                st.subheader('Run Sanity Tests')
+                    
+                expand_corr = st.beta_expander('Pairwise Correlation Analysis')
+                    
+                with expand_corr:
                             
-                                To plot the histograms of AUC, LipidCruncher turns all 0 values (i.e. missing values) to 1 
-                                and then log-transforms the whole dataset. This allows the user to visualize what portion of the 
-                                values are missing without affecting the distribution (as 1 is orders of magnitude smaller than 
-                                the minimum detection threshold by mass spectrometry).
-                        
-                                """)
+                        st.info("""
                                 
-                            st.write(""" Visualize the distribution of AUC's in any of the replicates and compare with other replicates: """)
-                    
-                            plot_hist(X, rep_lst, cond_lst) # histograms of AU
-                    
-                        st.subheader('Run Sanity Tests')
-                    
-                        expand_corr = st.beta_expander('Pairwise Correlation Analysis')
-                    
-                        with expand_corr:
+                            Typically, the AUC's of lipid species in any sample is highly linearly correlated to those in its biological replicate
+                            (i.e. correlation coefficient > 0.7). This linear correlation is expected to be even stronger for technical replicates 
+                            (i.e. correlation coefficient > 0.9).
+                            A weaker correlation should raise suspicion on the quality of the involving replicates.
+                                
+                            """)
+                                
+                        st.info("LipidCruncher removes the missing values before preforming the correlation test.")
                             
-                            st.info("""
-                                
-                                Typically, the AUC's of lipid species in any sample is highly linearly correlated to those in its biological replicate
-                                (i.e. correlation coefficient > 0.7). This linear correlation is expected to be even stronger for technical replicates 
-                                (i.e. correlation coefficient > 0.9).
-                                A weaker correlation should raise suspicion on the quality of the involving replicates.
-                                
-                                """)
-                                
-                            st.info("LipidCruncher removes the missing values before preforming the correlation test.")
+                        st.write('Run a correlation test to inspect the degree of correlation between any two biological or technical replicates:')
+                    
+                        plot_corr(X, cond_lst, rep_lst) # pairwise correlation plots
+                    
+                expand_pca = st.beta_expander('Principal Component Analysis')
+                    
+                with expand_pca:
                             
-                            st.write('Run a correlation test to inspect the degree of correlation between any two biological or technical replicates:')
-                    
-                            plot_corr(X, cond_lst, rep_lst) # pairwise correlation plots
-                    
-                        expand_pca = st.beta_expander('Principal Component Analysis')
-                    
-                        with expand_pca:
+                        st.info("""
+                                
+                            Principal Component Analysis, or PCA, is a dimensionality-reduction method that is often used to reduce the 
+                            dimensionality of large data sets, by transforming a large set of variables into a smaller one that still contains 
+                            most of the information in the large set.
+                                
+                            """)
+                                
+                        st.info("""
+                                
+                            Typically, biological replicates are expected to cluster together with the exception of rare outliers that fall 
+                            further away from the rest of the replicates. However, technical replicates are always expected to tightly 
+                            cluster together. 
                             
-                            st.info("""
+                            """)
                                 
-                                Principal Component Analysis, or PCA, is a dimensionality-reduction method that is often used to reduce the 
-                                dimensionality of large data sets, by transforming a large set of variables into a smaller one that still contains 
-                                most of the information in the large set.
+                        st.info(""" 
                                 
-                                """)
-                                
-                            st.info("""
-                                
-                                Typically, biological replicates are expected to cluster together with the exception of rare outliers that fall 
-                                further away from the rest of the replicates. However, technical replicates are always expected to tightly 
-                                cluster together. 
-                                
-                                """)
-                                
-                            st.info(""" 
-                                
-                                A plot of the top two principal components (PC1 and PC2) against each other is the best way to inspect the clustering 
-                                of different samples. This is because the PC's are ordered based on how much of the variability in the data 
-                                they can explain (i.e. PC1 is the PC with the highest variance explained ratio, PC2 is the PC with the second highest variance 
-                                expalined ratio and so on). However, LipidCruncher provides the user with the top five PC's and their corresponding
-                                varianve explained percentages. This is useful if PC's other than PC1 and PC2
-                                also explain a significant portion of the variance in the data. For example, if PC1, PC2 and PC3 explain 
-                                30%, 28% and 25% of the variance in the data respectively, a plot of PC1 vs. PC3 and PC2 vs. PC3 could also be informative. 
+                            A plot of the top two principal components (PC1 and PC2) against each other is the best way to inspect the clustering 
+                            of different samples. This is because the PC's are ordered based on how much of the variability in the data 
+                            they can explain (i.e. PC1 is the PC with the highest variance explained ratio, PC2 is the PC with the second highest variance 
+                            expalined ratio and so on).
                                  
                                 
-                                """)
+                            """)
                         
-                            st.write('Run PCA to inspect the clustering of different samples:')
+                        st.write('Run PCA to inspect the clustering of different samples:')
                         
-                            plot_pca(X, rep_lst, cond_lst) # PCA analysis
+                        plot_pca(X, rep_lst, cond_lst) # PCA analysis
                     
-                        st.subheader('Evaluate the Quality of Technical Replicates')
+                st.subheader('Evaluate the Quality of Technical Replicates')
                     
-                        expand_cov = st.beta_expander('Coefficient of Variation Analysis')
+                expand_cov = st.beta_expander('Coefficient of Variation Analysis')
                     
-                        with expand_cov:
+                with expand_cov:
                             
-                            st.info(""" 
+                        st.info(""" 
                                 
-                                The coefficient of variation (CoV) is defined as the ratio of the standard deviation to the mean.
-                                It shows the extent of variability in relation to the mean of the population and is often expressed as a percentage.
+                            The coefficient of variation (CoV) is defined as the ratio of the standard deviation to the mean.
+                            It shows the extent of variability in relation to the mean of the population and is often expressed as a percentage.
                                 
-                                """)
+                            """)
                                 
-                            st.info(""" 
+                        st.info(""" 
                                 
-                                Technical replicates are expected to be approximately identical. Therefore, the vast majority of the lipid species
-                                with a abundance higher than the limit of detection must have a very low CoV (i.e. CoV < 25%).
-                                The red line in the CoV plot is the line of "25% CoV" and the green line is the "limit of detection" line.
+                            Technical replicates are expected to be approximately identical. Therefore, the vast majority of the lipid species
+                            with a abundance higher than the "limit of detection" must have a very low CoV (i.e. CoV < 25%).
+                            The red line in the CoV plot is the line of "25% CoV" and the green line is the "limit of detection" line.
                                 
-                                """)
+                            """)
                                 
-                            st.write('Run a CoV analysis to evaluate the quality of your technical replicates:')
+                        st.write('Run a CoV analysis to evaluate the quality of your technical replicates:')
                     
-                            plot_cov(X, cond_lst, rep_lst, dataset_type)
+                        plot_cov(X, cond_lst, rep_lst, dataset_type)
                 
                 
                 
