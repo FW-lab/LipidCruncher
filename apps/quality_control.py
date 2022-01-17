@@ -385,8 +385,10 @@ def app():
         counter = 0
                     
         for intensity in intensities:
+            
+            #st.write(float(intensity))
                         
-            if intensity > 0:
+            if float(intensity) > 0:
                             
                 counter = counter+1
                             
@@ -1175,9 +1177,11 @@ def app():
                 
                 df = pd.read_csv(lipid_xplorer.name)
                 
+                df, intsta_df = extract_internal_standards(df)
+                
                 if ('FORMULA' and 'MASS' and 'ERROR') in df.columns.values.tolist():
                 
-                    return df
+                    return df, intsta_df
                 
                 else: 
                     
@@ -1196,7 +1200,7 @@ def app():
             
             
     # building LipidXplorer dataframe (merging positive and negatve modes)
-    def build_merged_lipidxplorer_df(pos_df, neg_df):
+    def build_merged_lipidxplorer_df(pos_df, pos_intsta_df, neg_df, neg_intsta_df):
         
         st.sidebar.info("""
                         
@@ -1211,15 +1215,21 @@ def app():
         
         neg_class = ['LPA', 'LPE', 'PE', 'PE-O', 'PA', 'PI', 'PG', 'PS']
 
-        pos_cols = ['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']
+        pos_cols = ['SPECIES', 'MOLSPECIES','FORMULA', 'MASS', 'ERROR', 'CLASS']
         
-        neg_cols = ['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']
+        neg_cols = ['SPECIES', 'MOLSPECIES','FORMULA', 'MASS', 'ERROR', 'CLASS']
         
         # if both datasets are uploaded 
         
         if (pos_df is not None) and (neg_df is not None):
         
             pos_df = pos_df.loc[pos_df['CLASS'].isin(pos_class)]
+            
+            pos_intsta_df.dropna(how='all', inplace=True) # removes empty rows
+            
+            pos_intsta_df['CLASS'] = pos_intsta_df['SPECIES'].apply(lambda x: x.split(' ')[0])
+            
+            pos_intsta_df = pos_intsta_df.loc[pos_intsta_df['CLASS'].isin(pos_class)]
             
             for column in pos_df:
                 
@@ -1229,7 +1239,15 @@ def app():
             
             pos_df = pos_df[pos_cols]
             
+            pos_intsta_df = pos_intsta_df[pos_cols]
+            
             neg_df = neg_df.loc[neg_df['CLASS'].isin(neg_class)]
+            
+            neg_intsta_df.dropna(how='all', inplace=True) # removes empty rows
+            
+            neg_intsta_df['CLASS'] = neg_intsta_df['SPECIES'].apply(lambda x: x.split(' ')[0])
+            
+            neg_intsta_df = neg_intsta_df.loc[neg_intsta_df['CLASS'].isin(neg_class)]
             
             for column in neg_df:
                 
@@ -1239,13 +1257,15 @@ def app():
             
             neg_df = neg_df[neg_cols]
             
+            neg_intsta_df = neg_intsta_df[neg_cols]
+            
             # if the two datasets have different number of columns (i.e samples)
             
             if len(pos_cols) != len(neg_cols):
                 
                 st.sidebar.error("""
                                  
-                                 The two datasets must represent the same number of samples (i.e. equal number of 'PRECURSORINTENSITY' columns),
+                                 The two datasets must have equal number of relevant columns,
                                  otherwise merging is not possible.
                                  The datasets you uploaded do not satisfy the above condition!  
                                  
@@ -1274,8 +1294,10 @@ def app():
                 if counter == 0:
             
                     df = pd.concat([pos_df, neg_df])
+                    
+                    intsta_df = pd.concat([pos_intsta_df, neg_intsta_df])
             
-                    return df
+                    return df, intsta_df
             
                 # if there are columns with un-matching names 
                 
@@ -1593,14 +1615,17 @@ def app():
     
     
     
-     # function to apply filters to the LipidXplorer data
-    def apply_filter_lipid_xplorer(df, group_df, rep_lst, cond_lst, filter_mode, filtered_conds, passing_abundance_grade):
+     # function to clean/apply filters to the LipidXplorer data
+    def apply_filter_lipid_xplorer(df, intsta_df, group_df, rep_lst, cond_lst, filter_mode, filtered_conds, passing_abundance_grade):
     
         # initial cleaning 
         
         total_reps = sum(rep_lst) # total number of all replicates
         
         X = df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']+
+                ['PRECURSORINTENSITY:' + group_df['sample name'].iloc[i] + '.mzML' for i in range(total_reps)]]
+                
+        intsta_df = intsta_df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']+
                 ['PRECURSORINTENSITY:' + group_df['sample name'].iloc[i] + '.mzML' for i in range(total_reps)]]
         
         X.rename(columns={"CLASS": "Class"}, inplace=True)
@@ -1613,11 +1638,11 @@ def app():
                 
                 X.rename(columns={column: 'MainArea[s'+str(counter+1)+']'}, inplace=True)
                 
+                intsta_df.rename(columns={column: 'MainArea[s'+str(counter+1)+']'}, inplace=True)
+                
                 counter = counter + 1
                 
-        # extracting the internal standards dataframe
-        
-        X, intsta_df = extract_internal_standards(X)
+        # cleaning X
         
         X = X[X.SPECIES != '###'] # removes the rows that start with ### (comments)
         
@@ -1639,9 +1664,19 @@ def app():
         
         X.reset_index(inplace=True)
         
-        X.drop(['level_0', 'ERROR'], axis=1, inplace=True) # drops an irrelevant column
+        X.drop(['level_0', 'ERROR', 'MOLSPECIES'], axis=1, inplace=True) # drops an irrelevant column
         
         X.rename(columns={"index": "old_index"}, inplace=True)
+        
+        # cleaning internal standards df
+        
+        intsta_df.dropna(how='all', inplace=True) # removes empty rows
+        
+        intsta_df.reset_index(inplace=True)
+        
+        intsta_df.drop(['MOLSPECIES', 'ERROR'], axis=1, inplace=True) # drops an irrelevant column 
+        
+        intsta_df.rename(columns={"index": "old_index"}, inplace=True)
         
         st.write('View the cleaned data in conventionl format:')
                 
@@ -1684,7 +1719,7 @@ def app():
     
     
     # function to extract the internal standards dataframe from the uploaded dataset 
-    def extract_internal_standards(X):  
+    def extract_internal_standards(df):  
     
         mol_lst = df['MOLSPECIES'].values.tolist()
         
@@ -1692,27 +1727,17 @@ def app():
         
         for ele in mol_lst:
             
-            if 'splashMS' in str(ele):
+            if 'splash' in str(ele):
                 
                 index = mol_lst.index(ele)
                 
                 intsta_lst.append(index+1)
                 
-        intsta_df = X.iloc[intsta_lst, :]
+        intsta_df = df.iloc[intsta_lst, :]
         
-        intsta_df.dropna(how='all', inplace=True) # removes empty rows
-        
-        intsta_df.reset_index(inplace=True)
-        
-        intsta_df.drop(['MOLSPECIES', 'ERROR'], axis=1, inplace=True) # drops an irrelevant column 
-        
-        intsta_df.rename(columns={"index": "old_index"}, inplace=True)
-        
-        X.drop(intsta_lst,0,inplace=True) # removes the internal standard rows from the dataset
-        
-        X.drop(['MOLSPECIES'], axis=1, inplace=True) # drops an irrelevant column
+        df.drop(intsta_lst,0,inplace=True) # removes the internal standard rows from the dataset
             
-        return X, intsta_df 
+        return df, intsta_df 
     
     
     
@@ -1909,6 +1934,8 @@ def app():
                             st.write("View the raw data:")
                 
                             st.write(df)
+                            
+                            csv_downloader(df, 'data')
                     
                         expand_cleaned_data = st.beta_expander("Cleaned Data")
                         
@@ -2047,7 +2074,7 @@ def app():
             
             if lipid_xplorer is not None:
             
-                df = build_single_lipidxplorer_df(lipid_xplorer)
+                df, intsta_df = build_single_lipidxplorer_df(lipid_xplorer)
                 
             else: 
                 
@@ -2063,15 +2090,15 @@ def app():
             
             if lipid_xplorer_pos is not None:
                 
-                pos_df = build_single_lipidxplorer_df(lipid_xplorer_pos)
+                pos_df, pos_intsta_df = build_single_lipidxplorer_df(lipid_xplorer_pos)
                 
             if lipid_xplorer_neg is not None:
                 
-                neg_df = build_single_lipidxplorer_df(lipid_xplorer_neg)
+                neg_df, neg_intsta_df = build_single_lipidxplorer_df(lipid_xplorer_neg)
         
             if (lipid_xplorer_pos is not None) and (lipid_xplorer_neg is not None):
             
-                df = build_merged_lipidxplorer_df(pos_df, neg_df)
+                df, intsta_df = build_merged_lipidxplorer_df(pos_df, pos_intsta_df, neg_df, neg_intsta_df)
                 
             else:
                 
@@ -2124,7 +2151,7 @@ def app():
                             
                         """)
                         
-                    X, intsta_df = apply_filter_lipid_xplorer(df, group_df, rep_lst, cond_lst, filter_mode, filtered_conds, passing_abundance_grade) # cleaned data
+                    X, intsta_f = apply_filter_lipid_xplorer(df, intsta_df, group_df, rep_lst, cond_lst, filter_mode, filtered_conds, passing_abundance_grade) # cleaned data
                     
                 expand_hist = st.beta_expander('Distributions of the Area Under the Curve (AUC)')
                     
