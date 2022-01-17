@@ -5,7 +5,7 @@ Find LipidCruncher at: https://share.streamlit.io/fw-lab/lipidcruncher/main/lipi
 
 Watch a demo on the "Data Exploration & Quality Check Module" of LipidCruncher at: https://www.youtube.com/watch?v=DCJxdG6fIlQ
 
-## Try The App in under 10 minutes!
+## Try The App
 The app is simple and intuitive. In order to try the app follow the steps below:
 1) Download the sample dataset: search_test1.csv
 3) Open the app and click on the "Data Exploration & Quality Check Module" from the navigation bar 
