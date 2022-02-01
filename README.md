@@ -3,7 +3,7 @@ Mass spectrometry is an analytical technique that is used to measure the mass-to
 
 Find LipidCruncher at: https://share.streamlit.io/fw-lab/lipidcruncher/main/lipidcruncher.py
 
-Watch a demo on the "Data Exploration & Quality Check Module" of LipidCruncher at: https://www.youtube.com/watch?v=DCJxdG6fIlQ
+Watch a demo on the "Data Exploration & Quality Check Module" of LipidCruncher at: https://www.youtube.com/watch?v=EF406iMQ0qM
 
 ## Try The App
 The app is simple and intuitive. In order to try the app follow the steps below:
@@ -20,4 +20,4 @@ The app is simple and intuitive. In order to try the app follow the steps below:
 6) In the "Apply Built-in Filters" section, set the minimum required MainGrade Score at 6 (i.e. removes the data points that are highly likely to be misidentifications) and skip to the end of the sidebar!
 7) Check the box at the end of the sidebar to confirm the inputs
 8) Explore the app! 
-9) Watch the demo for more info: https://www.youtube.com/watch?v=DCJxdG6fIlQ
+9) Watch the demo for more info: https://www.youtube.com/watch?v=EF406iMQ0qM
