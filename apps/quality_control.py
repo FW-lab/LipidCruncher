@@ -1175,7 +1175,7 @@ def app():
             
             if 'SPECIES' in row1[0]:
                 
-                df = pd.read_csv(lipid_xplorer.name)
+                df = pd.read_csv(lipid_xplorer.name, error_bad_lines=False)
                 
                 df, intsta_df = extract_internal_standards(df)
                 
