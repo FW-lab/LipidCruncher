@@ -1271,7 +1271,7 @@ def app():
                                  
                                  """)
                                  
-                return None
+                return None, None
             
             else:
             
@@ -1315,11 +1315,11 @@ def app():
                 
                     st.sidebar.write(unmatch_cols_df)
                 
-                    return None
+                    return None, None
         
         else:
             
-            return None
+            return None, None
     
     
     
