@@ -64,7 +64,7 @@ def app():
             
             if ".txt" in lipid_search.name:
                 
-                df = pd.read_csv('trimmed_'+lipid_search.name, delimiter = "\t")
+                df = pd.read_csv('trimmed_'+lipid_search.name, delimiter = "\t", error_bad_lines=False)
                 
                 if ('LipidMolec' and 'Class' and 'Calc Mass' and 'BaseRt' and 'MainArea[s1]' and 'MainGrade[s1]') in df.columns.values.tolist():
                 
@@ -76,7 +76,7 @@ def app():
                 
             elif ".csv" in lipid_search.name:
                 
-                df = pd.read_csv('trimmed_'+lipid_search.name)
+                df = pd.read_csv('trimmed_'+lipid_search.name, error_bad_lines=False)
                 
                 if ('LipidMolec' and 'Class' and 'Calc Mass' and 'BaseRt' and 'MainArea[s1]' and 'MainGrade[s1]') in df.columns.values.tolist():
                     
@@ -614,7 +614,33 @@ def app():
             
             temp = temp.mask(temp <= 0).fillna(1) # turning 0's and negative numbers  to 1's so it is possible to log transform
             
-            arrange_hist(number_rep, temp, sample_lst)
+            if number_rep < 50:
+            
+                arrange_hist(number_rep, temp, sample_lst)
+                
+            else:
+                
+                st.warning("LipidCruncher has limited available resources. You have more than 50 samples, \
+                           the best is to plot no more than 50 plots at a time.")
+                           
+                st.write('Use the double-slider below to set a range of samples you want to investigate. \
+                         Make sure to not to go beyond the 50 samples limit.')
+                         
+                srange = st.slider("", value=[0, number_rep])
+                
+                diff = srange[1] - srange[0]
+                
+                if diff <= 50: 
+                    
+                    show_range_hist = st.button("Show Plots!")
+                    
+                    if show_range_hist:
+                    
+                        arrange_hist(diff, temp[['MainArea[s'+str(i+1)+']' for i in range(srange[0], srange[1])]], sample_lst[srange[0]: srange[1]])
+                    
+                else: 
+                    
+                    st.error("You have exceeded the 50 samples limit!")
                         
             return
                     
@@ -1187,13 +1213,13 @@ def app():
                     
                    st.sidebar.error('This is not a valid LipidXplorer dataset!')
                 
-                   return None 
+                   return None, None 
             
             else:
                 
                 st.sidebar.error('This is not a valid LipidXplorer dataset!')
                 
-                return None
+                return None, None
             
             
             
@@ -1222,6 +1248,46 @@ def app():
         # if both datasets are uploaded 
         
         if (pos_df is not None) and (neg_df is not None):
+            
+            # dealing with classes that are detected but not included in pos_class + neg_class
+            
+            all_class = pos_class + neg_class
+            
+            pos_df_unique_class = pos_df['CLASS'].unique()
+            
+            pos_class_rest = [x for x in pos_df_unique_class if (x not in all_class) and (str(x) != 'nan')]
+            
+            if len(pos_class_rest) > 0:
+            
+                st.sidebar.markdown('The following additional class(es) are detected in the positive mode. \
+                                    Use the drop down menu to add additional classes to the list of the positive mode classes.')
+            
+                for lipid_class in pos_class_rest:
+                    
+                    st.sidebar.write(lipid_class)
+                    
+                pos_class_add = st.sidebar.multiselect('Add classes to the list of positive mode classes', pos_class_rest)
+                
+                pos_class = pos_class + pos_class_add
+                
+            neg_df_unique_class = neg_df['CLASS'].unique()
+            
+            neg_class_rest = [x for x in neg_df_unique_class if (x not in all_class) and (x not in pos_class) and (str(x) != 'nan')]
+            
+            if len(neg_class_rest) > 0:
+            
+                st.sidebar.markdown('The following additional class(es) are detected in the negative mode. \
+                                    Use the drop down menu to add additional classes to the list of the negative mode classes.')
+            
+                for lipid_class in neg_class_rest:
+                    
+                    st.sidebar.write(lipid_class)
+                    
+                neg_class_add = st.sidebar.multiselect('Add classes to the list of the negative mode classes', neg_class_rest)
+                
+                neg_class = neg_class + neg_class_add
+                
+            # picking up the relevant classes from each mode and merging the two datasets 
         
             pos_df = pos_df.loc[pos_df['CLASS'].isin(pos_class)]
             
@@ -1925,7 +1991,7 @@ def app():
             
                     if confirm_data:
                     
-                        st.subheader("Scan & Visualize Data")
+                        st.subheader("Explore Data")
                     
                         expand_raw_data = st.beta_expander("Raw Data")
             
@@ -2000,7 +2066,7 @@ def app():
                     
                             plot_retention(X, cond_lst, rep_lst) # retention time plots
                     
-                        st.subheader("Run Sanity Tests")
+                        st.subheader("Run Quality Checks")
                     
                         expand_corr = st.beta_expander('Pairwise Correlation Analysis') 
                         
@@ -2110,7 +2176,7 @@ def app():
             
             if confirm_data:
                     
-                st.subheader("Scan & Visualize Data")
+                st.subheader("Explore Data")
                     
                 expand_raw_data = st.beta_expander("Raw Data")
             
@@ -2178,7 +2244,7 @@ def app():
                     
                         plot_hist(X, rep_lst, cond_lst) # histograms of AU
                     
-                st.subheader('Run Sanity Tests')
+                st.subheader('Run Quality Checks')
                     
                 expand_corr = st.beta_expander('Pairwise Correlation Analysis')
                     
