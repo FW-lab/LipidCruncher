@@ -4,8 +4,11 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import ColumnDataSource, HoverTool, Whisker
+from bokeh.transform import dodge
 import base64
+
+from bokeh.models import BasicTickFormatter, Range1d
 
 
 def app():
@@ -1347,45 +1350,19 @@ def app():
     
     
     # function that creates the inputs of volcano plots and builds them 
-    def volcano_plot(X_impute, norm_X_impute, cond_lst, rep_lst, full_sample_lst, impute_ans):
+    def volcano_plot(dataset_type, temp, cond_lst, rep_lst, full_sample_lst, impute_ans):
         
         show_vol = st.checkbox("View Volcano Plots")
         
         if show_vol:
             
-            data_ans = st.radio('Select which data you would like to do analysis on', ['non-normalized data', 'normalized data'], 0)
-            
-            if data_ans == 'non-normalized data':
-                
-                temp = X_impute.copy()
-                
-            else:
-                
-                temp = norm_X_impute.copy()
+            if dataset_type == 'LipidXplorer':
                 
                 for sample in full_sample_lst:
                     
                     temp.rename(columns={'normalized_AUC['+sample+']': 'MainArea['+sample+']'}, inplace=True)
             
             rep_lst_agg = build_rep_lst_agg(rep_lst)
-            
-            for cond_1 in cond_lst:
-            
-                sample_lst_1 = update_sample_lst(cond_1, cond_lst, rep_lst_agg, full_sample_lst) # updated sample lst corresponding to cond_1
-            
-                for cond_2 in cond_lst:
-                
-                    sample_lst_2 = update_sample_lst(cond_2, cond_lst, rep_lst_agg, full_sample_lst) # updated sample lst corresponding to cond_2
-                
-                    temp['p_val_' + cond_1 + '_' + cond_2] = \
-                    temp[['MainArea[' + sample + ']'  for sample in sample_lst_1 + sample_lst_2]]\
-                    .apply(lambda x: p_val_calculator(x[['MainArea[' + sample + ']'  for sample in sample_lst_1]], \
-                                                      x[['MainArea[' + sample + ']'  for sample in sample_lst_2]]), axis=1)
-                    
-                    temp['fc_' + cond_1 + '_' + cond_2] = \
-                    temp[['MainArea[' + sample + ']'  for sample in sample_lst_1 + sample_lst_2]]\
-                    .apply(lambda x: fc_calculator(x[['MainArea[' + sample + ']'  for sample in sample_lst_1]], \
-                                                   x[['MainArea[' + sample + ']'  for sample in sample_lst_2]]), axis=1)
             
             cond_1 = st.selectbox('Pick the first condition', cond_lst, 0)
             
@@ -1398,6 +1375,20 @@ def app():
                     st.error('At least two samples per condition are required for a meanigful analysis!')
                     
                     return None
+                
+            sample_lst_1 = update_sample_lst(cond_1, cond_lst, rep_lst_agg, full_sample_lst) # updated sample lst corresponding to cond_1
+            
+            sample_lst_2 = update_sample_lst(cond_2, cond_lst, rep_lst_agg, full_sample_lst) # updated sample lst corresponding to cond_2
+            
+            temp['p_val_' + cond_1 + '_' + cond_2] = \
+                    temp[['MainArea[' + sample + ']'  for sample in sample_lst_1 + sample_lst_2]]\
+                    .apply(lambda x: p_val_calculator(x[['MainArea[' + sample + ']'  for sample in sample_lst_1]], \
+                                                      x[['MainArea[' + sample + ']'  for sample in sample_lst_2]]), axis=1)
+                        
+            temp['fc_' + cond_1 + '_' + cond_2] = \
+                    temp[['MainArea[' + sample + ']'  for sample in sample_lst_1 + sample_lst_2]]\
+                    .apply(lambda x: fc_calculator(x[['MainArea[' + sample + ']'  for sample in sample_lst_1]], \
+                                                   x[['MainArea[' + sample + ']'  for sample in sample_lst_2]]), axis=1)
                 
             lipid_class_lst = X['Class'].value_counts().index.tolist()
                     
@@ -1805,6 +1796,377 @@ def app():
         
         return dataframe
     
+    
+    
+    
+    # function to calculate the abundance of sfa, mufa and pufa for each lipid species 
+    def calculate_SFA_MUFA_PUFA(dataframe, lipid_class, cond, sample_lst):
+        
+        dataframe = dataframe[dataframe['Class'] == lipid_class]
+        
+        dataframe[cond + '_mean_AUC'] = dataframe[['MainArea[' + sample + ']' for sample in sample_lst]]\
+            .apply(lambda x: np.mean(x), axis = 1)
+            
+        dataframe[cond + '_var_AUC'] = dataframe[['MainArea[' + sample + ']' for sample in sample_lst]]\
+            .apply(lambda x: np.var(x), axis = 1)
+            
+        dataframe = dataframe[['LipidMolec', cond + '_mean_AUC', cond + '_var_AUC']]
+        
+        dataframe['FA_ratio'] = dataframe['LipidMolec'].apply(lambda x: calculate_FA_ratio(x))
+        
+        dataframe['SFA_ratio'] = dataframe['FA_ratio'].apply(lambda x: x[0])
+        
+        dataframe['MUFA_ratio'] = dataframe['FA_ratio'].apply(lambda x: x[1])
+        
+        dataframe['PUFA_ratio'] = dataframe['FA_ratio'].apply(lambda x: x[2])
+        
+        dataframe['SFA_AUC'] = dataframe[[cond + '_mean_AUC', 'SFA_ratio']].apply(lambda x: x[0]*x[1], axis = 1)
+        
+        dataframe['MUFA_AUC'] = dataframe[[cond + '_mean_AUC', 'MUFA_ratio']].apply(lambda x: x[0]*x[1], axis = 1)
+        
+        dataframe['PUFA_AUC'] = dataframe[[cond + '_mean_AUC', 'PUFA_ratio']].apply(lambda x: x[0]*x[1], axis = 1)
+        
+        dataframe['SFA_var'] = dataframe[[cond + '_var_AUC', 'SFA_ratio']].apply(lambda x: x[0]*x[1]**2, axis = 1)
+        
+        dataframe['MUFA_var'] = dataframe[[cond + '_var_AUC', 'MUFA_ratio']].apply(lambda x: x[0]*x[1]**2, axis = 1)
+        
+        dataframe['PUFA_var'] = dataframe[[cond + '_var_AUC', 'PUFA_ratio']].apply(lambda x: x[0]*x[1]**2, axis = 1)
+        
+        sfa = dataframe['SFA_AUC'].sum()
+        
+        sfa_var = dataframe['SFA_var'].sum()
+        
+        mufa = dataframe['MUFA_AUC'].sum()
+        
+        mufa_var = dataframe['MUFA_var'].sum()
+        
+        pufa = dataframe['PUFA_AUC'].sum()
+        
+        pufa_var = dataframe['PUFA_var'].sum()
+        
+        return sfa, mufa, pufa, sfa_var, mufa_var, pufa_var
+    
+    
+    
+    
+    # function to calculate the ratio of sfa, mufa and pufa for each lipid species 
+    def calculate_FA_ratio(mol_structure):
+        
+        a = mol_structure.split('(')
+        
+        b = a[1][:-1]
+        
+        c = b.split('/')
+        
+        sfa_ratio = 0
+        
+        mufa_ratio = 0
+        
+        pufa_ratio = 0
+        
+        for item in c:
+            
+            d = item.split(':')[-1]
+            
+            if d.isnumeric():
+                
+                d = int(d)
+            
+                if d == 0:
+                
+                    sfa_ratio += 1 
+                
+                elif d == 1:
+                
+                    mufa_ratio += 1
+                
+                else:
+                
+                    pufa_ratio += 1
+                    
+            else:
+                
+                if '0' in d:
+                    
+                    sfa_ratio += 1
+                    
+                elif '1' in d:
+                    
+                    mufa_ratio += 1
+                    
+                else:
+                    
+                    pufa_ratio += 1
+                    
+        total = sfa_ratio + mufa_ratio + pufa_ratio
+                
+        sfa_ratio = sfa_ratio / total
+            
+        mufa_ratio = mufa_ratio / total
+            
+        pufa_ratio = pufa_ratio / total
+        
+        return sfa_ratio, mufa_ratio, pufa_ratio
+    
+    
+    
+    
+    # function to perform saturation level analysis 
+    def saturation_level_plot(dataset_type, temp, full_sample_lst, cond_lst, rep_lst):
+            
+        if dataset_type == 'LipidXplorer':
+                
+            for sample in full_sample_lst:
+                    
+                temp.rename(columns={'normalized_AUC['+sample+']': 'MainArea['+sample+']'}, inplace=True)
+                    
+        rep_lst_agg = build_rep_lst_agg(rep_lst)
+        
+        show_typical_bar = st.checkbox("View Typical Bar Plots")
+        
+        if show_typical_bar:
+            
+            for lipid_class in temp['Class'].unique():
+                
+                sfa_lst = []
+                
+                mufa_lst = []
+                
+                pufa_lst = []
+                
+                sfa_var_lst = []
+                
+                mufa_var_lst = []
+                
+                pufa_var_lst = []
+                
+                for cond in cond_lst:
+                    
+                    sample_lst = update_sample_lst(cond, cond_lst, rep_lst_agg, full_sample_lst)
+                    
+                    sfa, mufa, pufa, sfa_var, mufa_var, pufa_var = calculate_SFA_MUFA_PUFA(temp, lipid_class, cond, sample_lst)
+                    
+                    sfa_lst.append(sfa)
+                    
+                    mufa_lst.append(mufa)
+                    
+                    pufa_lst.append(pufa)
+                    
+                    sfa_var_lst.append(np.sqrt(sfa_var))
+                    
+                    mufa_var_lst.append(np.sqrt(mufa_var))
+                    
+                    pufa_var_lst.append(np.sqrt(pufa_var))
+                    
+                data = {'conditions' : cond_lst,
+                        'SFA'   : sfa_lst,
+                        'SFA_upper' : [x+e for x,e in zip(sfa_lst, sfa_var_lst)],
+                        'SFA_lower' : [x-e for x,e in zip(sfa_lst, sfa_var_lst)],
+                        'MUFA'   : mufa_lst,
+                        'MUFA_upper' : [x+e for x,e in zip(mufa_lst, mufa_var_lst)],
+                        'MUFA_lower' : [x-e for x,e in zip(mufa_lst, mufa_var_lst)],
+                        'PUFA'   : pufa_lst,
+                        'PUFA_upper' : [x+e for x,e in zip(pufa_lst, pufa_var_lst)],
+                        'PUFA_lower' : [x-e for x,e in zip(pufa_lst, pufa_var_lst)]}
+                
+                max_height = max([max(sfa_lst), max(mufa_lst), max(pufa_lst)])
+                    
+                source = ColumnDataSource(data=data)
+                    
+                p = figure(x_range = cond_lst, y_range = (0, max_height * 2), height=250, title="Saturation Level Plot - " + lipid_class,
+                           x_axis_label= 'Conditions', y_axis_label= 'Total AUC',toolbar_location='right')
+
+                p.vbar(x=dodge('conditions', -0.25, range=p.x_range), top='SFA', width=0.2, source=source,
+                           color="#c9d9d3", legend_label="SFA")
+                
+                p.add_layout(Whisker(source=source, base=dodge('conditions', -0.25, range=p.x_range), \
+                                     upper="SFA_upper", lower="SFA_lower", level='overlay'))
+
+                p.vbar(x=dodge('conditions',  0.0,  range=p.x_range), top='MUFA', width=0.2, source=source,
+                           color="#718dbf", legend_label="MUFA")
+                
+                p.add_layout(Whisker(source=source, base=dodge('conditions', 0.0, range=p.x_range), \
+                                     upper="MUFA_upper", lower="MUFA_lower", level='overlay'))
+
+                p.vbar(x=dodge('conditions',  0.25, range=p.x_range), top='PUFA', width=0.2, source=source,
+                           color="#e84d60", legend_label="PUFA")
+                
+                p.add_layout(Whisker(source=source, base=dodge('conditions', 0.25, range=p.x_range), \
+                                     upper="PUFA_upper", lower="PUFA_lower", level='overlay'))
+                    
+                p.x_range.range_padding = 0.1
+
+                p.xgrid.grid_line_color = None
+
+                p.legend.location = "top_center"
+
+                p.legend.orientation = "horizontal"
+                
+                p.legend.label_text_font_size = "10pt"
+                
+                p.title.text_font_size = "15pt"
+        
+                p.xaxis.axis_label_text_font_size = "15pt"
+            
+                p.yaxis.axis_label_text_font_size = "15pt"
+            
+                p.xaxis.major_label_text_font_size = "15pt"
+            
+                p.yaxis.major_label_text_font_size = "15pt"
+                
+                p.yaxis.formatter = BasicTickFormatter(precision=1)
+                    
+                st.bokeh_chart(p)
+                
+                sat_df = pd.DataFrame({"Conditions": cond_lst, "SFA": sfa_lst, "SFA_STDV": np.sqrt(sfa_var_lst), "MUFA": mufa_lst, \
+                               "MUFA_STDV": np.sqrt(mufa_var_lst), "PUFA": pufa_lst, "PUFA_STDV": np.sqrt(pufa_lst)})
+                
+                csv_downloader(sat_df, 'Saturation Level plot')
+                
+        show_stacked_bar_plots = st.checkbox("View Stacked Bar Plots")
+        
+        if show_stacked_bar_plots:
+            
+            for lipid_class in temp['Class'].unique():
+                
+                sfa_lst = []
+                
+                mufa_lst = []
+                
+                pufa_lst = []
+                
+                for cond in cond_lst:
+                    
+                    sample_lst = update_sample_lst(cond, cond_lst, rep_lst_agg, full_sample_lst)
+                    
+                    sfa, mufa, pufa, sfa_var, mufa_var, pufa_var = calculate_SFA_MUFA_PUFA(temp, lipid_class, cond, sample_lst)
+                    
+                    sfa_lst.append(sfa)
+                    
+                    mufa_lst.append(mufa)
+                    
+                    pufa_lst.append(pufa)
+                    
+                data = {'conditions' : cond_lst,
+                        'SFA'   : sfa_lst,
+                        'MUFA'   : mufa_lst,
+                        'PUFA'   : pufa_lst}
+                
+                tot_lst = sfa_lst + mufa_lst + pufa_lst
+                
+                max_height = max(tot_lst)
+                
+                colors = ["#c9d9d3", "#718dbf", "#e84d60"]
+                
+                p = figure(x_range = cond_lst, y_range = (0, max_height * 2), height=250, title="Saturation Level Plot - " + lipid_class,
+                           x_axis_label= 'Conditions', y_axis_label= 'Total AUC',toolbar_location='right')
+                
+                p.vbar_stack(['SFA', 'MUFA', 'PUFA'], x='conditions', color = colors, width=0.2, source=data,
+                             legend_label=['SFA', 'MUFA', 'PUFA'])
+                
+                p.x_range.range_padding = 0.1
+
+                p.xgrid.grid_line_color = None
+
+                p.legend.location = "top_center"
+
+                p.legend.orientation = "horizontal"
+                
+                p.legend.label_text_font_size = "10pt"
+                
+                p.title.text_font_size = "15pt"
+        
+                p.xaxis.axis_label_text_font_size = "15pt"
+            
+                p.yaxis.axis_label_text_font_size = "15pt"
+            
+                p.xaxis.major_label_text_font_size = "15pt"
+            
+                p.yaxis.major_label_text_font_size = "15pt"
+                
+                p.yaxis.formatter = BasicTickFormatter(precision=1)
+                
+                st.bokeh_chart(p)
+                
+                sat_df = pd.DataFrame({"Conditions": cond_lst, "SFA": sfa_lst, "MUFA": mufa_lst, \
+                                       "PUFA": pufa_lst})
+                
+                csv_downloader(sat_df, 'Saturation Level plot')
+                
+        show_stacked_percentage_bar_plots = st.checkbox("View Percentage-Based Stacked Bar Plots")
+        
+        if show_stacked_percentage_bar_plots:
+            
+            for lipid_class in temp['Class'].unique():
+                
+                sfa_lst = []
+                
+                mufa_lst = []
+                
+                pufa_lst = []
+                
+                for cond in cond_lst:
+                    
+                    sample_lst = update_sample_lst(cond, cond_lst, rep_lst_agg, full_sample_lst)
+                    
+                    sfa, mufa, pufa, sfa_var, mufa_var, pufa_var = calculate_SFA_MUFA_PUFA(temp, lipid_class, cond, sample_lst)
+                    
+                    sfa_lst.append(sfa)
+                    
+                    mufa_lst.append(mufa)
+                    
+                    pufa_lst.append(pufa)
+                    
+                percent_sfa_lst = [sfa_lst[i]/(sfa_lst[i]+mufa_lst[i]+pufa_lst[i])*100 for i in range(len(sfa_lst))]
+                
+                percent_mufa_lst = [mufa_lst[i]/(sfa_lst[i]+mufa_lst[i]+pufa_lst[i])*100 for i in range(len(sfa_lst))]
+                
+                percent_pufa_lst = [pufa_lst[i]/(sfa_lst[i]+mufa_lst[i]+pufa_lst[i])*100 for i in range(len(sfa_lst))]
+                    
+                data = {'conditions' : cond_lst,
+                        'SFA'   : percent_sfa_lst,
+                        'MUFA'   : percent_mufa_lst,
+                        'PUFA'   : percent_pufa_lst}
+                
+                colors = ["#c9d9d3", "#718dbf", "#e84d60"]
+                
+                p = figure(x_range = cond_lst, y_range = (0, 100), height=250, title="Saturation Level Plot - " + lipid_class,
+                           x_axis_label= 'Conditions', y_axis_label= 'AUC',toolbar_location='right')
+                
+                p.vbar_stack(['SFA', 'MUFA', 'PUFA'], x='conditions', color = colors, width=0.2, source=data,
+                             legend_label=['SFA', 'MUFA', 'PUFA'])
+                
+                p.x_range.range_padding = 0.1
+
+                p.xgrid.grid_line_color = None
+
+                p.legend.location = "center_right"
+
+                p.legend.orientation = "vertical"
+                
+                p.legend.label_text_font_size = "6.5pt"
+                
+                p.title.text_font_size = "15pt"
+        
+                p.xaxis.axis_label_text_font_size = "15pt"
+            
+                p.yaxis.axis_label_text_font_size = "15pt"
+            
+                p.xaxis.major_label_text_font_size = "15pt"
+            
+                p.yaxis.major_label_text_font_size = "15pt"
+                
+                p.yaxis.formatter = BasicTickFormatter(precision=1)
+                
+                st.bokeh_chart(p)
+                
+                sat_df = pd.DataFrame({"Conditions": cond_lst, "SFA": percent_sfa_lst, "MUFA": percent_mufa_lst, \
+                                       "PUFA": percent_pufa_lst})
+                
+                csv_downloader(sat_df, 'Saturation Level plot')
+            
+        return 
+    
     ##########################################################################################################################################
     # the main code of the app 
         
@@ -1866,10 +2228,39 @@ def app():
                             '''
                             st.write(latext)
                             
-                            norm_X_impute = X_impute # LipidSearch data does not need normalization 
+                            temp = X_impute.copy()
                         
-                            volcano_plot(X_impute, norm_X_impute, cond_lst, rep_lst, full_sample_lst, impute_ans)
-
+                            volcano_plot(dataset_type, temp, cond_lst, rep_lst, full_sample_lst, impute_ans)
+                            
+                        expand_sat_plot = st.beta_expander("Saturation Level Plots")
+                        
+                        with expand_sat_plot:
+                            
+                            st.info('Saturation level plots show the saturation profile of each lipid class.')
+                                    
+                            st.info('First, for each lipid species, the ratio of Saturated Fatty Acids (SFA), Mono Unsaturated \
+                                      Fatty Acids (MUFA) and Poly Unsaturated Fatty Acids (PUFA) is calculated as following:')
+                                    
+                            st.write('SFA ratio = total number of saturated fatty acids / total number of fatty acids')
+                            
+                            st.write('MUFA ratio = total number of mono unsaturated fatty acids / total number of fatty acids')
+                            
+                            st.write('PUFA ratio = total number of poly unsaturated fatty acids / total number of fatty acids')
+                            
+                            st.info('Then, for each lipid species, the abundance of SFA, MUFA and PUFA is calculated as following:')
+                            
+                            st.write('AUC(SFA) = (AUC averaged over replicates).(SFA ratio)')
+                            
+                            st.write('AUC(MUFA) = (AUC averaged over replicates).(MUFA ratio)')
+                            
+                            st.write('AUC(PUFA) = (AUC averaged over replicates).(PUFA ratio)')
+                            
+                            st.info('Finally, total AUC(SFA), AUC(MUFA) and AUC(PUFA) for each lipid class is calculated by taking the sum of \
+                                    AUC(SFA), AUC(MUFA) and AUC(PUFA) over all lipid species that belong to that class. ')
+                            
+                            temp = X.copy()
+                            
+                            saturation_level_plot(dataset_type, temp, full_sample_lst, cond_lst, rep_lst)
                     
     elif dataset_type == 'LipidXplorer':
         
@@ -1979,8 +2370,18 @@ def app():
                             
                             '''
                     st.write(latext)
+                    
+                    data_ans = st.radio('Select which data you would like to do analysis on', ['non-normalized data', 'normalized data'], 0)
+            
+                    if data_ans == 'non-normalized data':
+                
+                        temp = X_impute.copy()
+                
+                    else:
+                
+                        temp = norm_X_impute.copy()
                         
-                    volcano_plot(X_impute, norm_X_impute, cond_lst, rep_lst, full_sample_lst, impute_ans)
+                    volcano_plot(dataset_type, temp, cond_lst, rep_lst, full_sample_lst, impute_ans)
                 
                 
                 
