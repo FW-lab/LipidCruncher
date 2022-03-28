@@ -8,7 +8,7 @@ from bokeh.models import ColumnDataSource, HoverTool, Whisker
 from bokeh.transform import dodge
 import base64
 
-#from bokeh.models import BasicTickFormatter, Range1d
+from bokeh.models import BasicTickFormatter, Range1d
 
 
 def app():
