@@ -554,8 +554,14 @@ def app():
             st.write('View the cleaned data in the conventional format:')
                 
             st.write(X)
-                
-            csv_downloader(X, 'cleaned_data')
+            
+            csv_download = convert_df(X)
+                            
+            st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='cleaned_data.csv',
+                                mime='text/csv')
             
             st.write('------------------------------------------------------------------------------------------------')
             
@@ -565,7 +571,13 @@ def app():
             
             st.write(log_X)
             
-            csv_downloader(log_X, 'log_transformed_cleaned_data')
+            csv_download = convert_df(log_X)
+                            
+            st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='log_transformed_cleaned_data.csv',
+                                mime='text/csv')
             
             return X 
     
