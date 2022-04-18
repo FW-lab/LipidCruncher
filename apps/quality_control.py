@@ -805,8 +805,14 @@ def app():
                 st.write('Find the exact correlation coefficients in the table below:')
         
                 st.write(temp.corr())
-                
-                csv_downloader(temp.corr(), 'Correlation_Matrix_'+str(cond))
+            
+                csv_download = convert_df(temp.corr())
+                            
+                st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='Correlation_Matrix_'+str(cond),
+                                mime='text/csv')
             
             else:
             
@@ -965,6 +971,14 @@ def app():
                         st.bokeh_chart(plot)
                     
                         file_name = 'retention_plot_' + class_name
+                        
+                        csv_download = convert_df(retention_df)
+                            
+                        st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name=file_name,
+                                mime='text/csv')
                     
                         csv_downloader(retention_df, file_name)
                     
@@ -2025,12 +2039,10 @@ def app():
                             csv_download = convert_df(df)
                             
                             st.download_button(
-                                label="Download data",
+                                label="Download Data",
                                 data=csv_download,
                                 file_name='data.csv',
                                 mime='text/csv')
-                            
-                            #csv_downloader(df, 'data')
                     
                         expand_cleaned_data = st.expander("Cleaned Data")
                         
