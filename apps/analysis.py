@@ -2018,8 +2018,8 @@ def app():
                     
                 st.bokeh_chart(p)
                 
-                sat_df = pd.DataFrame({"Conditions": cond_lst, "SFA": sfa_lst, "SFA_STDV": np.sqrt(sfa_var_lst), "MUFA": mufa_lst, \
-                               "MUFA_STDV": np.sqrt(mufa_var_lst), "PUFA": pufa_lst, "PUFA_STDV": np.sqrt(pufa_lst)})
+                sat_df = pd.DataFrame({"Conditions": cond_lst, "SFA": sfa_lst, "SFA_STDV": sfa_var_lst, "MUFA": mufa_lst, \
+                               "MUFA_STDV": mufa_var_lst, "PUFA": pufa_lst, "PUFA_STDV": pufa_lst})
                 
                 csv_downloader(sat_df, 'Saturation Level plot')
                 
