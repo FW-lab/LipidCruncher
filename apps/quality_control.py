@@ -811,7 +811,7 @@ def app():
                 st.download_button(
                                 label="Download Data",
                                 data=csv_download,
-                                file_name='Correlation_Matrix_'+str(cond)+'.csv,
+                                file_name='Correlation_Matrix_'+str(cond)+'.csv',
                                 mime='text/csv')
             
             else:
