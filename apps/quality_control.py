@@ -1993,7 +1993,7 @@ def app():
                     
                         st.subheader("Explore Data")
                     
-                        expand_raw_data = st.beta_expander("Raw Data")
+                        expand_raw_data = st.expander("Raw Data")
             
                         with expand_raw_data:
                             
@@ -2003,7 +2003,7 @@ def app():
                             
                             csv_downloader(df, 'data')
                     
-                        expand_cleaned_data = st.beta_expander("Cleaned Data")
+                        expand_cleaned_data = st.expander("Cleaned Data")
                         
                         with expand_cleaned_data:
                             
@@ -2024,7 +2024,7 @@ def app():
                     
                             X = apply_filter_lipid_search(df, rep_lst, cond_lst, missing_ans, name_df, filter_mode, filtered_conds, passing_abundance_grade) # cleaned data 
                             
-                        expand_hist = st.beta_expander("Distributions of the Area Under the Curve (AUC)")
+                        expand_hist = st.expander("Distributions of the Area Under the Curve (AUC)")
                         
                         with expand_hist:
                             
@@ -2049,7 +2049,7 @@ def app():
                         
                             plot_hist(X, rep_lst, cond_lst) # histograms of AUC
                     
-                        expand_retention = st.beta_expander('Retention Time of Lipid Species')
+                        expand_retention = st.expander('Retention Time of Lipid Species')
                         
                         with expand_retention:
                             
@@ -2068,7 +2068,7 @@ def app():
                     
                         st.subheader("Run Quality Checks")
                     
-                        expand_corr = st.beta_expander('Pairwise Correlation Analysis') 
+                        expand_corr = st.expander('Pairwise Correlation Analysis') 
                         
                         with expand_corr:
                             
@@ -2087,7 +2087,7 @@ def app():
                     
                             plot_corr(X, cond_lst, rep_lst) # pairwise correlation plots 
                     
-                        expand_pca = st.beta_expander('Principal Component Analysis (PCA)')
+                        expand_pca = st.expander('Principal Component Analysis (PCA)')
                     
                         with expand_pca:
                         
@@ -2178,7 +2178,7 @@ def app():
                     
                 st.subheader("Explore Data")
                     
-                expand_raw_data = st.beta_expander("Raw Data")
+                expand_raw_data = st.expander("Raw Data")
             
                 with expand_raw_data:
                             
@@ -2186,7 +2186,7 @@ def app():
                 
                     st.write(df)
                             
-                expand_clean_data = st.beta_expander('Cleaned Data')
+                expand_clean_data = st.expander('Cleaned Data')
                         
                 with expand_clean_data:
                             
@@ -2219,7 +2219,7 @@ def app():
                         
                     X, intsta_f = apply_filter_lipid_xplorer(df, intsta_df, group_df, rep_lst, cond_lst, filter_mode, filtered_conds, passing_abundance_grade) # cleaned data
                     
-                expand_hist = st.beta_expander('Distributions of the Area Under the Curve (AUC)')
+                expand_hist = st.expander('Distributions of the Area Under the Curve (AUC)')
                     
                 with expand_hist:
                             
@@ -2246,7 +2246,7 @@ def app():
                     
                 st.subheader('Run Quality Checks')
                     
-                expand_corr = st.beta_expander('Pairwise Correlation Analysis')
+                expand_corr = st.expander('Pairwise Correlation Analysis')
                     
                 with expand_corr:
                             
@@ -2265,7 +2265,7 @@ def app():
                     
                         plot_corr(X, cond_lst, rep_lst) # pairwise correlation plots
                     
-                expand_pca = st.beta_expander('Principal Component Analysis')
+                expand_pca = st.expander('Principal Component Analysis')
                     
                 with expand_pca:
                             
@@ -2301,7 +2301,7 @@ def app():
                     
                 st.subheader('Evaluate the Quality of Technical Replicates')
                     
-                expand_cov = st.beta_expander('Coefficient of Variation Analysis')
+                expand_cov = st.expander('Coefficient of Variation Analysis')
                     
                 with expand_cov:
                             
