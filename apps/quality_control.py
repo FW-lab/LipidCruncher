@@ -1007,8 +1007,6 @@ def app():
                                 data=csv_download,
                                 file_name='Retention_Time_Comparison_Mode.csv',
                                 mime='text/csv')
-                        
-                        csv_downloader(retention_df, 'Retention_Time_Comparison_Mode')
                     
             return
         
@@ -1160,6 +1158,14 @@ def app():
                 if show_pca:
                 
                     st.bokeh_chart(plot)
+                    
+                    csv_download = convert_df(pca_df[['PC1', 'PC2', 'sample', 'legend']])
+                            
+                    st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='PCA.csv',
+                                mime='text/csv')
                 
                     csv_downloader(pca_df[['PC1', 'PC2', 'sample', 'legend']], 'PCA')
                             
