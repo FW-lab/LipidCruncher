@@ -569,7 +569,13 @@ def app():
                 
                 st.write(X)
                 
-                csv_downloader(X, 'cleaned_data')
+                csv_download = convert_df(X)
+                            
+                st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='cleaned_data.csv',
+                                mime='text/csv')
             
                 st.write('------------------------------------------------------------------------------------------------')
             
@@ -578,8 +584,14 @@ def app():
                 log_X = log_transform_df(X, rep_lst, full_sample_lst)
             
                 st.write(log_X)
-            
-                csv_downloader(log_X, 'log_transformed_cleaned_data')
+                
+                csv_download = convert_df(log_X)
+                            
+                st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='log_transformed_cleaned_data.csv',
+                                mime='text/csv')
             
             return X, X_impute, rep_lst, cond_lst, full_sample_lst, impute_ans
         
@@ -1225,8 +1237,14 @@ def app():
             st.write('View the cleaned data in conventionl format:')
                 
             st.write(X)
-                
-            csv_downloader(X, 'cleaned_data')
+            
+            csv_download = convert_df(X)
+                            
+            st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='cleaned_data.csv',
+                                mime='text/csv')
         
             st.write('-----------------------------------------------------------------------------')
         
@@ -1236,15 +1254,27 @@ def app():
             
             st.write(log_X)
             
-            csv_downloader(log_X, 'log_transformed_cleaned_data')
+            csv_download = convert_df(log_X)
+                            
+            st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='log_transformed_cleaned_data.csv',
+                                mime='text/csv')
         
             st.write('-----------------------------------------------------------------------------')
         
             st.write('View the internal standards data in conventional format: ')
                 
             st.write(intsta_df)
-                
-            csv_downloader(intsta_df, 'internal_standards')
+            
+            csv_download = convert_df(intsta_df)
+                            
+            st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='internal_standards.csv',
+                                mime='text/csv')
         
             st.write('-----------------------------------------------------------------------------')
         
@@ -1253,8 +1283,14 @@ def app():
             log_intsta_df = log_transform_df(intsta_df, rep_lst, full_sample_lst)
                 
             st.write(log_intsta_df)
-                
-            csv_downloader(log_intsta_df, 'log_transformed_internal_standards')
+            
+            csv_download = convert_df(log_intsta_df)
+                            
+            st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='log_transformed_internal_standards.csv',
+                                mime='text/csv')
                 
         return X, X_impute, intsta_df, rep_lst, cond_lst, full_sample_lst, impute_ans
     
@@ -1402,9 +1438,15 @@ def app():
                         
             plot, vol_df = volcano_hover(temp, selected_class, cond_1, cond_2, impute_ans)
             
-            st.bokeh_chart(plot)  
+            st.bokeh_chart(plot) 
             
-            csv_downloader(vol_df, 'volcano plot')
+            csv_download = convert_df(vol_df)
+                            
+            st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='volcano_plot.csv',
+                                mime='text/csv')
                 
         return
     
@@ -2021,7 +2063,13 @@ def app():
                 sat_df = pd.DataFrame({"Conditions": cond_lst, "SFA": sfa_lst, "SFA_STDV": sfa_var_lst, "MUFA": mufa_lst, \
                                "MUFA_STDV": mufa_var_lst, "PUFA": pufa_lst, "PUFA_STDV": pufa_lst})
                 
-                csv_downloader(sat_df, 'Saturation Level plot')
+                csv_download = convert_df(sat_df)
+                            
+                st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='saturation_level_plot.csv',
+                                mime='text/csv')
                 
         show_stacked_bar_plots = st.checkbox("View Stacked Bar Plots")
         
@@ -2091,7 +2139,13 @@ def app():
                 sat_df = pd.DataFrame({"Conditions": cond_lst, "SFA": sfa_lst, "MUFA": mufa_lst, \
                                        "PUFA": pufa_lst})
                 
-                csv_downloader(sat_df, 'Saturation Level plot')
+                csv_download = convert_df(sat_df)
+                            
+                st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='saturation_level_plot.csv',
+                                mime='text/csv')
                 
         show_stacked_percentage_bar_plots = st.checkbox("View Percentage-Based Stacked Bar Plots")
         
@@ -2163,7 +2217,13 @@ def app():
                 sat_df = pd.DataFrame({"Conditions": cond_lst, "SFA": percent_sfa_lst, "MUFA": percent_mufa_lst, \
                                        "PUFA": percent_pufa_lst})
                 
-                csv_downloader(sat_df, 'Saturation Level plot')
+                csv_download = convert_df(sat_df)
+                            
+                st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='saturation_level_plot.csv',
+                                mime='text/csv')
             
         return 
     
