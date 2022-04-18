@@ -2227,6 +2227,14 @@ def app():
             
         return 
     
+    
+    
+    
+    @st.cache
+    def convert_df(dataframe):
+
+        return dataframe.to_csv().encode('utf-8')
+    
     ##########################################################################################################################################
     # the main code of the app 
         
