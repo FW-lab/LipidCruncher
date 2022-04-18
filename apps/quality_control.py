@@ -1166,8 +1166,6 @@ def app():
                                 data=csv_download,
                                 file_name='PCA.csv',
                                 mime='text/csv')
-                
-                    csv_downloader(pca_df[['PC1', 'PC2', 'sample', 'legend']], 'PCA')
                             
             return
            
