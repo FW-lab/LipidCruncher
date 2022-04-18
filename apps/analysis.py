@@ -2197,7 +2197,7 @@ def app():
                     
                         st.subheader("Further Process Cleaned Data")
                     
-                        expand_cleaned_data = st.beta_expander("Impute Missing Values & Remove Low Quality Samples")
+                        expand_cleaned_data = st.expander("Impute Missing Values & Remove Low Quality Samples")
                         
                         with expand_cleaned_data:
                     
@@ -2206,7 +2206,7 @@ def app():
                     
                         st.subheader("Analyze Data")
                         
-                        expand_vol_plot = st.beta_expander("Volcano Plots")
+                        expand_vol_plot = st.expander("Volcano Plots")
                         
                         with expand_vol_plot:
                             
@@ -2232,7 +2232,7 @@ def app():
                         
                             volcano_plot(dataset_type, temp, cond_lst, rep_lst, full_sample_lst, impute_ans)
                             
-                        expand_sat_plot = st.beta_expander("Saturation Level Plots")
+                        expand_sat_plot = st.expander("Saturation Level Plots")
                         
                         with expand_sat_plot:
                             
@@ -2318,7 +2318,7 @@ def app():
                     
                 st.subheader("Further Process Cleaned Data")
                             
-                expand_clean_data = st.beta_expander('Impute Missing Values & Remove Low Quality Samples')
+                expand_clean_data = st.expander('Impute Missing Values & Remove Low Quality Samples')
                         
                 with expand_clean_data:
                         
@@ -2327,7 +2327,7 @@ def app():
                         
                 st.subheader('Normalize Data')
                 
-                expand_norm_data = st.beta_expander('Normalized Data')
+                expand_norm_data = st.expander('Normalized Data')
                 
                 with expand_norm_data:
                     
@@ -2349,7 +2349,7 @@ def app():
                 
                 st.subheader('Analyze Data')
                         
-                expand_vol_plot = st.beta_expander("Volcano Plots")
+                expand_vol_plot = st.expander("Volcano Plots")
                         
                 with expand_vol_plot:
                     
