@@ -1955,6 +1955,15 @@ def app():
         
         return
     
+    
+    
+    
+    
+    @st.cache
+    def convert_df(dataframe):
+
+        return dataframe.to_csv().encode('utf-8')
+    
     ##########################################################################################################################################
     # the main code of the app 
         
@@ -2000,8 +2009,16 @@ def app():
                             st.write("View the raw data:")
                 
                             st.write(df)
+                    
+                            csv_download = convert_df(df)
                             
-                            csv_downloader(df, 'data')
+                            st.download_button(
+                                label="Download data",
+                                data=csv_download,
+                                file_name='data.csv',
+                                mime='text/csv')
+                            
+                            #csv_downloader(df, 'data')
                     
                         expand_cleaned_data = st.expander("Cleaned Data")
                         
