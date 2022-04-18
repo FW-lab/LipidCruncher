@@ -811,7 +811,7 @@ def app():
                 st.download_button(
                                 label="Download Data",
                                 data=csv_download,
-                                file_name='Correlation_Matrix_'+str(cond),
+                                file_name='Correlation_Matrix_'+str(cond)+'.csv,
                                 mime='text/csv')
             
             else:
@@ -977,10 +977,8 @@ def app():
                         st.download_button(
                                 label="Download Data",
                                 data=csv_download,
-                                file_name=file_name,
+                                file_name=file_name+'.csv',
                                 mime='text/csv')
-                    
-                        csv_downloader(retention_df, file_name)
                     
                         st.write("----------------------------------------------------------------------------------------------------")
                         
@@ -1001,6 +999,14 @@ def app():
                         plot, retention_df = retention_multi(X, rep_lst, selected_class)
                     
                         st.bokeh_chart(plot)
+                        
+                        csv_download = convert_df(retention_df)
+                            
+                        st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='Retention_Time_Comparison_Mode.csv',
+                                mime='text/csv')
                         
                         csv_downloader(retention_df, 'Retention_Time_Comparison_Mode')
                     
