@@ -654,7 +654,7 @@ def app():
         
         for i in range(int(round(number_rep/3, 1))):
                             
-                col1, col2, col3 = st.beta_columns(3)
+                col1, col2, col3 = st.columns(3)
                             
                 fig = prep_hist(temp, sample_lst, 3*i)
                             
@@ -670,7 +670,7 @@ def app():
                             
         if number_rep % 3 == 2:
                             
-                col1, col2, col3 = st.beta_columns(3)
+                col1, col2, col3 = st.columns(3)
                             
                 fig = prep_hist(temp, sample_lst, -2)
                             
@@ -682,7 +682,7 @@ def app():
                             
         elif number_rep %3 == 1:
                             
-                col1, col2, col3 = st.beta_columns(3)
+                col1, col2, col3 = st.columns(3)
                             
                 fig = prep_hist(temp, sample_lst, -1)
                             
