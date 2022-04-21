@@ -1055,21 +1055,21 @@ def app():
             
             if show_pca:
                 
-                remove_ans = st.radio("Would you like to remove any samples from the analysis?", ['Yes', 'No'], 1)
+                #remove_ans = st.radio("Would you like to remove any samples from the analysis?", ['Yes', 'No'], 1)
                 
-                if remove_ans == 'Yes':
+                #if remove_ans == 'Yes':
                     
-                    r_sample = st.multiselect('Pick the sample(s) that you want to remove from the analysis', full_sample_lst)
+                    #r_sample = st.multiselect('Pick the sample(s) that you want to remove from the analysis', full_sample_lst)
                     
-                    if (len(full_sample_lst) - len(r_sample)) >= 3:
+                    #if (len(full_sample_lst) - len(r_sample)) >= 3:
                     
-                        rep_lst, cond_lst, full_sample_lst, df = update_df_cond_rep_sample_lst(cond_lst, rep_lst, full_sample_lst, r_sample, df)
+                        #rep_lst, cond_lst, full_sample_lst, df = update_df_cond_rep_sample_lst(cond_lst, rep_lst, full_sample_lst, r_sample, df)
                         
-                    else:
+                    #else:
                         
-                        st.error('At least three samples are required for a meanigful analysis!')
+                        #st.error('At least three samples are required for a meanigful analysis!')
                         
-                        return None
+                        #return None
                         
                 filter_ans = st.radio("Would you like to filter by lipid class?", ['Yes', 'No'], 1)
                 
@@ -1783,8 +1783,14 @@ def app():
         st.write('View the cleaned data in conventionl format:')
                 
         st.write(X)
+        
+        csv_download = convert_df(X)
                 
-        csv_downloader(X, 'cleaned_data')
+        st.download_button(
+                    label="Download Data",
+                    data=csv_download,
+                    file_name='cleaned_data.csv',
+                    mime='text/csv')
         
         st.write('-----------------------------------------------------------------------------')
         
@@ -1793,16 +1799,28 @@ def app():
         log_X = log_transform_df(X, rep_lst)
             
         st.write(log_X)
-            
-        csv_downloader(log_X, 'log_transformed_cleaned_data')
+        
+        csv_download = convert_df(log_X)
+                
+        st.download_button(
+                    label="Download Data",
+                    data=csv_download,
+                    file_name='log_transformed_cleaned_data.csv',
+                    mime='text/csv')
         
         st.write('-----------------------------------------------------------------------------')
         
         st.write('View the internal standards data in conventional format: ')
                 
         st.write(intsta_df)
+        
+        csv_download = convert_df(intsta_df)
                 
-        csv_downloader(intsta_df, 'internal_standards')
+        st.download_button(
+                    label="Download Data",
+                    data=csv_download,
+                    file_name='internal_standards.csv',
+                    mime='text/csv')
         
         st.write('-----------------------------------------------------------------------------')
         
@@ -1811,8 +1829,14 @@ def app():
         log_intsta_df = log_transform_df(intsta_df, rep_lst)
                 
         st.write(log_intsta_df)
+        
+        csv_download = convert_df(log_intsta_df)
                 
-        csv_downloader(log_intsta_df, 'log_transformed_internal_standards')
+        st.download_button(
+                    label="Download Data",
+                    data=csv_download,
+                    file_name='log_transformed_internal_standards.csv',
+                    mime='text/csv')
                 
         return X, intsta_df
     
@@ -1875,8 +1899,14 @@ def app():
                     X_plot, X_cov_df = cov_hover(X, sample_lst, dataset_type)
                 
                     st.bokeh_chart(X_plot)
-                
-                    csv_downloader(X_cov_df, 'CoV_All_Lipid_Species')
+                    
+                    csv_download = convert_df(X_cov_df)
+                            
+                    st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='cov.csv',
+                                mime='text/csv')
                 
         return
     
@@ -1972,24 +2002,6 @@ def app():
             mean = None
         
         return mean
-    
-    
-    
-    
-    # function to download data
-    def csv_downloader(data, name): 
-        
-        csvfile = data.to_csv()
-        
-        b64 = base64.b64encode(csvfile.encode()).decode()
-        
-        filename = name + ".csv"
-        
-        href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">Download Data</a>'
-        
-        st.markdown(href,unsafe_allow_html=True)
-        
-        return
     
     
     

@@ -6,9 +6,8 @@ from scipy import stats
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource, HoverTool, Whisker
 from bokeh.transform import dodge
-import base64
 
-from bokeh.models import BasicTickFormatter, Range1d
+from bokeh.models import BasicTickFormatter
 
 
 def app():
@@ -551,7 +550,9 @@ def app():
             
             # removing bad samples 
             
-            rep_lst, cond_lst, full_sample_lst, X, r_sample = remove_bad_samples(cond_lst, rep_lst, X)
+            #rep_lst, cond_lst, full_sample_lst, X, r_sample = remove_bad_samples(cond_lst, rep_lst, X)
+            
+            full_sample_lst = ['s'+str(i+1) for i in range(total_reps)]
             
             # X_impute is a dataframe which includes the info on which datapoint is imputed
             
@@ -1220,9 +1221,11 @@ def app():
         
         # removing bad samples 
             
-        rep_lst, cond_lst, full_sample_lst, X, r_sample = remove_bad_samples(cond_lst, rep_lst, X)
+        #rep_lst, cond_lst, full_sample_lst, X, r_sample = remove_bad_samples(cond_lst, rep_lst, X)
         
-        intsta_df = update_intsta_df(intsta_df, r_sample)
+        full_sample_lst = ['s'+str(i+1) for i in range(total_reps)]
+        
+        #intsta_df = update_intsta_df(intsta_df, r_sample)
             
         # imputing missing values  
         
@@ -1322,24 +1325,6 @@ def app():
         intsta_df['CLASS'] = intsta_df['SPECIES'].apply(lambda x: x.split(' ')[0])
             
         return df, intsta_df
-    
-    
-    
-    
-    # function to download data
-    def csv_downloader(data, name): 
-        
-        csvfile = data.to_csv()
-        
-        b64 = base64.b64encode(csvfile.encode()).decode()
-        
-        filename = name + ".csv"
-        
-        href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">Download Data</a>'
-        
-        st.markdown(href,unsafe_allow_html=True)
-        
-        return
     
     
     
@@ -1716,6 +1701,15 @@ def app():
         if confirm:
                         
             st.write(temp)
+            
+            csv_download = convert_df(temp)
+                            
+            st.download_button(
+                                label="Download Data",
+                                data=csv_download,
+                                file_name='normalized_data.csv',
+                                mime='text/csv',
+                                key='normalized_data')
         
         return temp, temp_impute
     
@@ -2068,8 +2062,9 @@ def app():
                 st.download_button(
                                 label="Download Data",
                                 data=csv_download,
-                                file_name='saturation_level_plot.csv',
-                                mime='text/csv')
+                                file_name='saturation_level_plot_bar.csv',
+                                mime='text/csv',
+                                key=lipid_class)
                 
         show_stacked_bar_plots = st.checkbox("View Stacked Bar Plots")
         
@@ -2144,8 +2139,9 @@ def app():
                 st.download_button(
                                 label="Download Data",
                                 data=csv_download,
-                                file_name='saturation_level_plot.csv',
-                                mime='text/csv')
+                                file_name='saturation_level_plot_stacked.csv',
+                                mime='text/csv',
+                                key=lipid_class)
                 
         show_stacked_percentage_bar_plots = st.checkbox("View Percentage-Based Stacked Bar Plots")
         
@@ -2222,8 +2218,9 @@ def app():
                 st.download_button(
                                 label="Download Data",
                                 data=csv_download,
-                                file_name='saturation_level_plot.csv',
-                                mime='text/csv')
+                                file_name='saturation_level_plot_percentage.csv',
+                                mime='text/csv',
+                                key = lipid_class)
             
         return 
     
@@ -2265,7 +2262,7 @@ def app():
                     
                         st.subheader("Further Process Cleaned Data")
                     
-                        expand_cleaned_data = st.expander("Impute Missing Values & Remove Low Quality Samples")
+                        expand_cleaned_data = st.expander("Impute Missing Values")
                         
                         with expand_cleaned_data:
                     
