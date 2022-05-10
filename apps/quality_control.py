@@ -1731,13 +1731,13 @@ def app():
         #X = df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']+
                 #['PRECURSORINTENSITY:' + group_df['sample name'].iloc[i] + '.mzML' for i in range(total_reps)]]
             
-         X = df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'CLASS']+
+        X = df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'CLASS']+
                 ['PRECURSORINTENSITY:' + group_df['sample name'].iloc[i] + '.mzML' for i in range(total_reps)]]
                 
         #intsta_df = intsta_df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']+
                 #['PRECURSORINTENSITY:' + group_df['sample name'].iloc[i] + '.mzML' for i in range(total_reps)]]
             
-         intsta_df = intsta_df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'CLASS']+
+        intsta_df = intsta_df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'CLASS']+
                 ['PRECURSORINTENSITY:' + group_df['sample name'].iloc[i] + '.mzML' for i in range(total_reps)]]
         
         X.rename(columns={"CLASS": "Class"}, inplace=True)
