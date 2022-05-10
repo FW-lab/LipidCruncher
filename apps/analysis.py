@@ -833,6 +833,10 @@ def app():
                 # if there are no columns with un-matching names 
                 
                 if counter == 0:
+                    
+                    pos_df.drop("ERROR", axis=1, inplace=True)
+                    
+                    neg_df.drop("ERROR", axis=1, inplace=True)
             
                     df = pd.concat([pos_df, neg_df])
                     
@@ -1163,10 +1167,16 @@ def app():
         
         total_reps = sum(rep_lst) # total number of all replicates
         
-        X = df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']+
+        #X = df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']+
+                #['PRECURSORINTENSITY:' + group_df['sample name'].iloc[i] + '.mzML' for i in range(total_reps)]]
+            
+        X = df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'CLASS']+
                 ['PRECURSORINTENSITY:' + group_df['sample name'].iloc[i] + '.mzML' for i in range(total_reps)]]
                 
-        intsta_df = intsta_df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']+
+        #intsta_df = intsta_df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'ERROR', 'CLASS']+
+                #['PRECURSORINTENSITY:' + group_df['sample name'].iloc[i] + '.mzML' for i in range(total_reps)]]
+        
+        intsta_df = intsta_df[['SPECIES', 'MOLSPECIES', 'FORMULA', 'MASS', 'CLASS']+
                 ['PRECURSORINTENSITY:' + group_df['sample name'].iloc[i] + '.mzML' for i in range(total_reps)]]
         
         X.rename(columns={"CLASS": "Class"}, inplace=True)
@@ -1195,9 +1205,9 @@ def app():
         
         #first filter
         
-        X['ERROR'] = pd.to_numeric(X['ERROR'], downcast="float")
+        #X['ERROR'] = pd.to_numeric(X['ERROR'], downcast="float")
         
-        X = X.loc[abs(X['ERROR']) < 5] # removes the datapoint if abs(error) > 5
+        #X = X.loc[abs(X['ERROR']) < 5] # removes the datapoint if abs(error) > 5
         
         #second filter: minimum abundance grade 
         
@@ -1205,7 +1215,9 @@ def app():
         
         X.reset_index(inplace=True)
         
-        X.drop(['level_0', 'ERROR', 'MOLSPECIES'], axis=1, inplace=True) # drops an irrelevant column
+        #X.drop(['level_0', 'ERROR', 'MOLSPECIES'], axis=1, inplace=True) # drops an irrelevant column
+        
+        X.drop(['level_0', 'MOLSPECIES'], axis=1, inplace=True) # drops an irrelevant column
         
         X.rename(columns={"index": "old_index"}, inplace=True)
         
@@ -1215,7 +1227,9 @@ def app():
         
         intsta_df.reset_index(inplace=True)
         
-        intsta_df.drop(['MOLSPECIES', 'ERROR'], axis=1, inplace=True) # drops an irrelevant column 
+        #intsta_df.drop(['MOLSPECIES', 'ERROR'], axis=1, inplace=True) # drops an irrelevant column 
+        
+        intsta_df.drop(['MOLSPECIES'], axis=1, inplace=True) # drops an irrelevant column
         
         intsta_df.rename(columns={"index": "old_index"}, inplace=True)
         
