@@ -968,9 +968,9 @@ def app():
     
     
     
-   # calculate CoV
-   @st.cache
-   def cov_calculator(numbers): 
+  # calculate CoV
+    @st.cache
+    def cov_calculator(numbers): 
     
         non_zero_lst = [number for number in numbers if (number>1)]
         
@@ -989,8 +989,8 @@ def app():
     
     
    # calculate mean
-   @st.cache
-   def mean_calculator(numbers): 
+    @st.cache
+    def mean_calculator(numbers): 
     
         non_zero_lst = [number for number in numbers if (number>1)]
         
