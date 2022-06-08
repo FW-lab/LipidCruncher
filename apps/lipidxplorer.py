@@ -1644,7 +1644,7 @@ def app():
                                 
                                 key='normalized_data')
             
-        norm_ans = st.radio('Would you like to use the normalized dataset for the rest of the analysis?', ['Yes', 'No'], 0)
+        norm_ans = st.radio('Would you like to use the normalized dataset for the rest of the analysis?', ['Yes', 'No'], 1)
         
         if norm_ans == 'Yes':
             
