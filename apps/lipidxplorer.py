@@ -119,12 +119,13 @@ def app():
             
             if len(pos_class_rest) > 0:
             
-                st.sidebar.markdown('The following additional class(es) are detected in the positive mode. \
-                                    Use the drop down menu to add additional classes to the list of the positive mode classes if necessary.')
+                st.sidebar.markdown('The following additional class(es) are detected in the positive mode.')
             
                 for lipid_class in pos_class_rest:
                     
                     st.sidebar.write(lipid_class)
+                    
+                st.sidebar.markdown('Use the drop down menu to add the additional classes to the list of the positive mode classes if necessary.')
                     
                 pos_class_add = st.sidebar.multiselect('Add classes to the list of positive mode classes', pos_class_rest)
                 
@@ -317,9 +318,7 @@ def app():
             st.sidebar.markdown("""
                                 
                                 LipidCruncher uses the following protocol for naming the samples: s1, s2, ..., sN.
-                                The table below shows the updated sample names (there is usually no difference between
-                                the old names and the updated names unless there is a missing sample or the samples were 
-                                not originally grouped together properly):
+                                The table below shows the updated sample names:
                                 
                                 """)
         
@@ -672,13 +671,17 @@ def app():
         
         intsta_df.set_index('SPECIES', inplace = True)
         
-        st.write('View the cleaned data in conventionl format:')
-                
-        st.write(X)
+        cleaned_data = st.checkbox("View Cleaned Data")
         
-        csv_download = convert_df(X)
+        if cleaned_data:
+        
+            st.write('View the cleaned data in conventionl format:')
                 
-        st.download_button(
+            st.write(X)
+        
+            csv_download = convert_df(X)
+                
+            st.download_button(
             
                     label="Download Data",
                     
@@ -688,17 +691,17 @@ def app():
                     
                     mime='text/csv')
         
-        st.write('-----------------------------------------------------------------------------')
+            st.write('-----------------------------------------------------------------------------')
         
-        st.write('View the cleaned data in log-transformed format:')
+            st.write('View the cleaned data in log-transformed format:')
                 
-        log_X = log_transform_df(X, rep_lst)
+            log_X = log_transform_df(X, rep_lst)
             
-        st.write(log_X)
+            st.write(log_X)
         
-        csv_download = convert_df(log_X)
+            csv_download = convert_df(log_X)
                 
-        st.download_button( 
+            st.download_button( 
             
                     label="Download Data",
                     
@@ -708,15 +711,15 @@ def app():
                     
                     mime='text/csv')
         
-        st.write('-----------------------------------------------------------------------------')
+            st.write('-----------------------------------------------------------------------------')
         
-        st.write('View the internal standards data in conventional format: ')
+            st.write('View the internal standards data in conventional format: ')
                 
-        st.write(intsta_df)
+            st.write(intsta_df)
         
-        csv_download = convert_df(intsta_df)
+            csv_download = convert_df(intsta_df)
                 
-        st.download_button(
+            st.download_button(
             
                     label="Download Data",
                     
@@ -726,17 +729,17 @@ def app():
                     
                     mime='text/csv')
         
-        st.write('-----------------------------------------------------------------------------')
+            st.write('-----------------------------------------------------------------------------')
         
-        st.write('View the internal standards data in log-transformed format:')
+            st.write('View the internal standards data in log-transformed format:')
                 
-        log_intsta_df = log_transform_df(intsta_df, rep_lst)
+            log_intsta_df = log_transform_df(intsta_df, rep_lst)
                 
-        st.write(log_intsta_df)
+            st.write(log_intsta_df)
         
-        csv_download = convert_df(log_intsta_df)
+            csv_download = convert_df(log_intsta_df)
                 
-        st.download_button(
+            st.download_button(
             
                     label="Download Data",
                     
@@ -861,6 +864,8 @@ def app():
                     
                     X, X_plot, X_cov_df = cov_hover(X, sample_lst)
                     
+                    st.write('------------------------------------------------------------------------------------------------------------')
+                    
                     show_cov = st.checkbox("View CoV plot")
                     
                     if show_cov:
@@ -878,6 +883,8 @@ def app():
                                 file_name='cov.csv',
                                 
                                 mime='text/csv')
+                        
+                    st.write('------------------------------------------------------------------------------------------------------------')
                     
                     filter_ans = st.radio('Would you like to filter the data by removing datapoints with high CoV?', ['Yes', 'No'], 1)
                     
@@ -896,20 +903,24 @@ def app():
                         X.drop(['mean', 'cov'], axis=1, inplace=True)
                         
                         X.set_index('SPECIES', inplace = True)
+                        
+                        filtered_data = st.checkbox('View Filtered Data')
+                        
+                        if filtered_data:
                     
-                        st.write(X)
+                            st.write(X)
             
-                        csv_download = convert_df(X)
+                            csv_download = convert_df(X)
                     
-                        st.download_button(
+                            st.download_button(
                         
-                            label="Download Data",
+                                label="Download Data",
                         
-                            data=csv_download,
+                                data=csv_download,
                         
-                            file_name='filtered_data.csv',
+                                file_name='filtered_data.csv',
                         
-                            mime='text/csv')
+                                mime='text/csv')
                     
                     else:
                         
@@ -1536,12 +1547,12 @@ def app():
                                 mime='text/csv')
             
             return X, rep_lst, cond_lst
-        
-        
-        
-        
-        
-    # function to normalize AUC data
+    
+    
+    
+    
+
+# function to normalize AUC data
     def normalize_auc(X, intsta_df, rep_lst):
         
         # extracting the list of classes for which no internal standard is found 
@@ -1555,78 +1566,38 @@ def app():
         all_class_lst = temp['CLASS'].unique().tolist()
         
         intsta_class_lst = intsta_df['CLASS'].unique().tolist()
-        
-        no_intsta_class_lst = [x for x in all_class_lst if x not in intsta_class_lst]
-        
-        st.write("An internal standard is found for the follwing classes:")
-        
-        for lipid_class in intsta_class_lst:
-            
-            st.write(lipid_class)
-        
-        if len(no_intsta_class_lst) > 0:
-        
-            st.write("However, no internal standards is found for the following classes:")
-        
-            for lipid_class in no_intsta_class_lst:
-            
-                st.write(lipid_class)
-                
-            st.write("For each lipid class that does not have a matching internal standard\
-                     , pick one internal standard from the existing list of internal standards \
-                     that most closely matches the lipid class:")
+                     
+        st.write('For each lipid class, pick one internal standard that most closely matches it.')
             
         # letting the user pick IS for classes with no IS
         
-        add_intsta_class_lst = pick_intsta(no_intsta_class_lst, intsta_class_lst)
+        add_intsta_class_lst = pick_intsta(all_class_lst, intsta_class_lst)
         
         # the amount of each IS in micro mole 
         
         st.write("Now, enter the concentration of each internal standard:")
         
         intsta_mic_mol_lst = build_intsta_mic_mol_lst(intsta_class_lst)
+        
+        # normalizing the data
             
         for i in range(sum(rep_lst)):
                 
             temp['normalized_AUC[s'+str(i+1)+']'] = 0
-                
-        # normalizing the data 
             
         for lipid_class in all_class_lst:
-                
-            if lipid_class in intsta_class_lst:
                     
-                class_index = intsta_class_lst.index(lipid_class)
-                    
-                mic_mol = intsta_mic_mol_lst[class_index]
-                
-                species_index_lst = temp[temp['CLASS'] == lipid_class].index.tolist()
-                    
-                intsta_row = find_intsta_index(lipid_class, intsta_class_lst, no_intsta_class_lst, add_intsta_class_lst, intsta_df)
-                    
-                for i in range(sum(rep_lst)):
-                        
-                    nums1 = temp['PRECURSORINTENSITY[s'+str(i+1)+']'].iloc[species_index_lst]
-                        
-                    num2 = intsta_df['PRECURSORINTENSITY[s'+str(i+1)+']'].iloc[intsta_row]
-                        
-                    norm_nums = compute_normalized_auc(nums1, num2, mic_mol)
-                        
-                    temp['normalized_AUC[s'+str(i+1)+']'].iloc[species_index_lst] = norm_nums
-                        
-            elif lipid_class in no_intsta_class_lst:
-                    
-                class_index = no_intsta_class_lst.index(lipid_class)
+                class_index = all_class_lst.index(lipid_class)
             
-                alt_lipid_class = add_intsta_class_lst[class_index]
+                is_lipid_class = add_intsta_class_lst[class_index]
                     
-                alt_class_index = intsta_class_lst.index(alt_lipid_class)
+                is_class_index = intsta_class_lst.index(is_lipid_class)
                     
-                mic_mol = intsta_mic_mol_lst[alt_class_index]
+                mic_mol = intsta_mic_mol_lst[is_class_index]
                     
                 species_index_lst = temp[temp['CLASS'] == lipid_class].index.tolist()
                     
-                intsta_row = find_intsta_index(lipid_class, intsta_class_lst, no_intsta_class_lst, add_intsta_class_lst, intsta_df)
+                intsta_row = find_intsta_index(is_lipid_class, intsta_df)
                     
                 for i in range(sum(rep_lst)):
                         
@@ -1689,12 +1660,12 @@ def app():
     
     
     
-    # function that receives the user input on which internal standards to use for classes with no internal standards 
-    def pick_intsta(no_intsta_class_lst, intsta_class_lst): 
+# function that receives the user input on which internal standards to use for classes with no internal standards 
+    def pick_intsta(all_class_lst, intsta_class_lst): 
             
         add_intsta_lst = []
             
-        for lipid_class in no_intsta_class_lst:
+        for lipid_class in all_class_lst:
                 
             add_intsta_lst.append(build_intsta_selectbox(lipid_class, intsta_class_lst)) # function defined below 
                 
@@ -1742,21 +1713,11 @@ def app():
     
     
     
-    # function for finding the index of IS in intsta_df
-    def find_intsta_index(lipid_class, intsta_class_lst, no_intsta_class_lst, add_intsta_class_lst, intsta_df):
-        
-        if lipid_class in intsta_class_lst:
+# function for finding the index of IS in intsta_df
+    def find_intsta_index(is_lipid_class, intsta_df):
             
-            intsta_row = intsta_df[intsta_df['CLASS'] == lipid_class].index.tolist()[0]
+        intsta_row = intsta_df[intsta_df['CLASS'] == is_lipid_class].index.tolist()[0]
             
-        elif lipid_class in no_intsta_class_lst:
-            
-            class_index = no_intsta_class_lst.index(lipid_class)
-            
-            alt_lipid_class = add_intsta_class_lst[class_index]
-            
-            intsta_row = intsta_df[intsta_df['CLASS'] == alt_lipid_class].index.tolist()[0]
-        
         return intsta_row
     
     
@@ -1782,7 +1743,7 @@ def app():
         # different options for imputing 
         
         impute_ans = st.radio('Pick one option',\
-                              ['No imputing', 'Replace missing values in each sample by the minimum detected AUC in that sample'], 0)
+                              ['No imputing', 'Replace missing values in each sample by the minimum detected AUC in that sample'], 1)
             
         if impute_ans == 'Replace missing values in each sample by the minimum detected AUC in that sample':
         
@@ -1822,11 +1783,11 @@ def app():
                 
             lipid_class_lst = temp['CLASS'].value_counts().index.tolist()
                     
-            selected_class = st.multiselect('Add or remove classes (up to 20 classes):', lipid_class_lst, lipid_class_lst[:1])
+            selected_class = st.multiselect('Add or remove classes:', lipid_class_lst, lipid_class_lst)
             
-            if len(selected_class) > 20:
+            if len(selected_class) > 30:
                         
-                st.error('You can only compare up to 20 lipid classes at a time!')
+                st.error('You can only compare up to 30 lipid classes at a time!')
                         
                 return None
                         
@@ -1856,7 +1817,8 @@ def app():
     def volcano_hover(dataframe, selected_class, cond_1, cond_2):
         
         unique_color_lst =[ 'red', 'blue', 'green', 'magenta', 'cyan', 'orange', 'black', 'pink', 'brown', 'yellow', 'purple', \
-                            'gray', 'olive', 'chocolate', 'silver', 'darkred', 'khaki', 'skyblue', 'navy', 'orchid']
+                            'gray', 'olive', 'chocolate', 'silver', 'darkred', 'khaki', 'skyblue', 'navy', 'orchid', 'deepskyblue', \
+                            'tan', 'lime', 'tomato', 'deeppink', 'lavender', 'salmon', 'darkkhaki', 'lavenderblush', 'indigo']
         
         fc = []
         
@@ -1993,7 +1955,7 @@ def app():
         
         A standard LipidXplorer dataset must have the following columns:
             
-        SPECIES: the class that the lipid species belong to and its number of carbon atoms and double bonds
+        SPECIES: the class that the lipid species belong to and its number of carbon atoms and double bonds - must be the first column
 
         CLASS: the class that the lipid species belong to
 
@@ -2067,10 +2029,14 @@ def app():
                 expand_raw_data = st.expander("Raw Data")
             
                 with expand_raw_data:
+                    
+                    raw_data = st.checkbox('View Raw Data')
+                    
+                    if raw_data:
                             
-                    st.write('View the raw data:')
+                        st.write('View the raw data:')
                 
-                    st.write(df)
+                        st.write(df)
                     
                 expand_clean_data = st.expander('Cleaned Data')
                         
@@ -2106,24 +2072,39 @@ def app():
                     
                     st.markdown(""" 
                                 
-                        Filtering mass spectrometry data is challenging. However, the most reliable method to filter the data 
+                        Filtering mass spectrometry data is challenging. However, one reliable method to filter the data 
                         is using "Batch Quality Control (BQC)" samples. Here is how BQC samples are created: take equal amount 
                         of aliquot from each study sample and pool. Then, create multiple BQC samples by transferring the pooled 
-                        mixture to new tubes. 
-                        
-                        BQC samples that are created as instructed are practically technical replicates. Technical replicates are 
-                        expected to be approximately identical. Therefore, the vast majority of the lipid species must have a very
+                        mixture to new tubes. If the pooled mixture is perfectly homogeneous, the BQC samples will be identical. Therefore, 
+                        there should not be any difference between the readings among all BQC samples. In reality, the pooled mixture is not 
+                        perfectly homogeneous, therefore a low variance in readings is expected. The vast majority of the lipid species 
+                        are expected to have a very
                         low CoV (i.e. CoV < 30%). The coefficient of variation (CoV) is defined as the ratio of the standard deviation to the mean.
                         It shows the extent of variability in relation to the mean of the population and is often expressed as a percentage.
                         The red line in the CoV plot is the line of "30% CoV".
                         
-                        Here is how LipidCruncher filter data using BQC samples: lipid species with CoV lower than a set threshold (e.g. 30%) are kept
-                        and the rest are removed. The readings with low CoV are highly reliable and the ones with a high CoV are less reliable. 
-                        It seems reasonble to provide the user with the option to filter the data using BQC samples. 
+                        When a datapoint (i.e. a lipid species) has a low CoV (i.e. consistent readings among all BQC samples), that datapoint is highly reliable.
+                        However, when a datapoint has a high CoV (i.e. inconsistent readings among BQC samples), that datapoint is less reliable. 
+                        The high CoV is either the result of the inhomogeneity of the pooled mixture (i.e. valid datapoint) or the error of the instrument
+                        and/or the lipid identification software (i.e. invalid datapoint). Not doing any filtering comes with the risk of accepting some 
+                        invalid datapoints and filtering comes with the risk of rejecting some valid datapoints. It seems reasonable to have the option to run
+                        the analysis with and without BQC filtering and compare the results.   
+                        
+                        Here is how LipidCruncher filters the data using BQC samples: lipid species with CoV lower than a set threshold (e.g. 30%) are kept
+                        and the rest are removed. 
                     
                         """)
                         
-                    st.info("Creating BQC samples in any lipidomics experiment is a great practice.")
+                    st.info("""
+                            
+                            Creating BQC samples in any lipidomics experiment is a great practice:
+                                
+                            1) The vast majority of the lipid species living in BQC samples are expected to have a low CoV. 
+                               Confirming the above statement is a great check for the overall quality of the dataset. 
+                            
+                            2) BQC samples provide a mechanism to separate datapoints with a very high reliablity from the ones that are less reliable. 
+                            
+                            """)
                     
                     X = plot_cov(X, cond_lst, rep_lst)
                     
@@ -2133,7 +2114,7 @@ def app():
                     
                     st.markdown("""
 
-                        In a standard LipidSearch dataset, columns "MainArea[s1]" to "MainArea[sN]" correspond to Area 
+                        In a standard LipidXplorer dataset, columns "PRECURSORINTENSITY[s1]" to "PRECURSORINTENSITY[sN]" correspond to Area 
                         Under the Curve (AUC) representing the relative abundance of the lipid species 
                         in samples s1 to sN. 
                         
@@ -2218,8 +2199,8 @@ def app():
                 
                 with expand_norm_data:
                     
-                    st.info('An internal standard (IS) is substance that is similar to the analyte that is added in a constant amount to the samples.\
-                            In order to calibrate the variation in the data, LipidCruncher normalizes the data using using internal standards.')
+                    st.info('An internal standard (IS) is a substance similar to the analyte that is added in a constant amount to the samples.\
+                            In order to calibrate the variation in the data, LipidCruncher normalizes the data using internal standards.')
                             
                     st.write('The following formula is used for data normalization:')
                             
@@ -2236,7 +2217,7 @@ def app():
                     
                 st.subheader("2.3) Analyze Data")
                     
-                expand_vol_plot = st.expander("Volcano Plots")
+                expand_vol_plot = st.expander("Volcano Plots - Test Hypothesis")
                 
                 with expand_vol_plot:
                     
@@ -2266,7 +2247,7 @@ def app():
                     st.info("The outcome of a T-test is most accurate when both samples that are being compared have the same size (i.e. \
                             equal number of datapoints). Therefore, to create a volcano plot, the best practice is to impute missing values.")
                         
-                    st.warning("Your choice here only affects the volcano plot, not the rst of the submodule.")
+                    st.warning("Your choice here only affects the volcano plot, not the rest of the submodule.")
                     
                     X.reset_index(inplace = True)
                 

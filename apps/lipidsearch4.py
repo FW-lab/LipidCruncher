@@ -513,13 +513,17 @@ def app():
             
             X.set_index('Rej', inplace = True)
             
-            st.write('View the cleaned data in the conventional format:')
-                
-            st.write(X)
+            cleaned_data = st.checkbox("View Cleaned Data")
             
-            csv_download = convert_df(X)
+            if cleaned_data:
+            
+                st.write('View the cleaned data in the conventional format:')
+                
+                st.write(X)
+            
+                csv_download = convert_df(X)
                             
-            st.download_button(
+                st.download_button(
                                 label="Download Data",
                                 
                                 data=csv_download,
@@ -528,17 +532,17 @@ def app():
                                 
                                 mime='text/csv')
             
-            st.write('------------------------------------------------------------------------------------------------')
+                st.write('------------------------------------------------------------------------------------------------')
             
-            st.write('View the cleaned data in the log-transformed format:')
+                st.write('View the cleaned data in the log-transformed format:')
                 
-            log_X = log_transform_df(X, rep_lst)
+                log_X = log_transform_df(X, rep_lst)
             
-            st.write(log_X)
+                st.write(log_X)
             
-            csv_download = convert_df(log_X)
+                csv_download = convert_df(log_X)
                             
-            st.download_button(
+                st.download_button(
                                 label="Download Data",
                                 
                                 data=csv_download,
@@ -578,6 +582,8 @@ def app():
                     
                     X, X_plot, X_cov_df = cov_hover(X, sample_lst)
                     
+                    st.write('--------------------------------------------------------------------------------------------------------------')
+                    
                     show_cov = st.checkbox("View CoV plot")
                     
                     if show_cov:
@@ -595,6 +601,8 @@ def app():
                                 file_name='cov.csv',
                                 
                                 mime='text/csv')
+                        
+                    st.write('--------------------------------------------------------------------------------------------------------------')
                     
                     filter_ans = st.radio('Would you like to filter the data by removing datapoints with high CoV?', ['Yes', 'No'], 1)
                     
@@ -607,34 +615,30 @@ def app():
                         X = X.loc[X['cov'] <= thresh] # removes datapoints with CoV > thresh
                     
                         X[auc]=X[auc].mask(X[auc]==1).fillna(0) # turning 1's back to 0's
-                        
-                        #show_filtered_cov = st.checkbox("View CoV plot for filtered data only")
-                        
-                        #if show_filtered_cov:
-                        
-                            #X, X_plot, X_cov_df = cov_hover(X, sample_lst)
-                            
-                            #st.bokeh_chart(X_plot)
                     
                         X.reset_index(inplace=True)
                     
                         X.drop(['mean', 'cov'], axis=1, inplace=True)
                         
                         X.set_index('Rej', inplace = True)
+                        
+                        filtered_data = st.checkbox('View Filtered Data')
+                        
+                        if filtered_data:
                     
-                        st.write(X)
+                            st.write(X)
             
-                        csv_download = convert_df(X)
+                            csv_download = convert_df(X)
                     
-                        st.download_button(
+                            st.download_button(
                         
-                            label="Download Data",
+                                label="Download Data",
                         
-                            data=csv_download,
+                                data=csv_download,
                         
-                            file_name='filtered_data.csv',
+                                file_name='filtered_data.csv',
                         
-                            mime='text/csv')
+                                mime='text/csv')
                     
                     else:
                         
@@ -1557,7 +1561,7 @@ def app():
         # different options for imputing 
         
         impute_ans = st.radio('Pick one option',\
-                              ['No imputing', 'Replace missing values in each sample by the minimum detected AUC in that sample'], 0)
+                              ['No imputing', 'Replace missing values in each sample by the minimum detected AUC in that sample'], 1)
             
         if impute_ans == 'Replace missing values in each sample by the minimum detected AUC in that sample':
         
@@ -1597,11 +1601,11 @@ def app():
                 
             lipid_class_lst = temp['Class'].value_counts().index.tolist()
                     
-            selected_class = st.multiselect('Add or remove classes (up to 20 classes):', lipid_class_lst, lipid_class_lst[:1])
+            selected_class = st.multiselect('Add or remove classes:', lipid_class_lst, lipid_class_lst)
             
-            if len(selected_class) > 20:
+            if len(selected_class) > 30:
                         
-                st.error('You can only compare up to 20 lipid classes at a time!')
+                st.error('You can only compare up to 30 lipid classes at a time!')
                         
                 return None
                         
@@ -1631,7 +1635,8 @@ def app():
     def volcano_hover(dataframe, selected_class, cond_1, cond_2):
         
         unique_color_lst =[ 'red', 'blue', 'green', 'magenta', 'cyan', 'orange', 'black', 'pink', 'brown', 'yellow', 'purple', \
-                            'gray', 'olive', 'chocolate', 'silver', 'darkred', 'khaki', 'skyblue', 'navy', 'orchid']
+                            'gray', 'olive', 'chocolate', 'silver', 'darkred', 'khaki', 'skyblue', 'navy', 'orchid', 'deepskyblue', \
+                            'tan', 'lime', 'tomato', 'deeppink', 'lavender', 'salmon', 'darkkhaki', 'lavenderblush', 'indigo']
         
         fc = []
         
@@ -2193,7 +2198,8 @@ def app():
         
         A standard LipidSearch dataset must have the following columns:
             
-        Rej: one of the built-in filtering mechanisms of LipidSearch which either takes 0 (i.e. accepted) or 1 (i.e. rejected)
+        Rej: one of the built-in filtering mechanisms of LipidSearch which either takes 0 (i.e. accepted) or 1 (i.e. rejected) - Must
+        be the first column.
 
         LipidMolec: the class that the lipid species belong to and its number of carbon atoms and double bonds
 
@@ -2243,21 +2249,23 @@ def app():
             
                         with expand_raw_data:
                             
-                            st.write("View the raw data:")
-                
-                            st.write(df)
-                    
-                            csv_download = convert_df(df)
+                            raw_data = st.checkbox('View Raw Data')
                             
-                            st.download_button(
+                            if raw_data:
+                
+                                st.write(df)
+                    
+                                csv_download = convert_df(df)
+                            
+                                st.download_button(
                                 
-                                label="Download Data",
+                                    label="Download Data",
                                 
-                                data=csv_download,
+                                    data=csv_download,
                                 
-                                file_name='data.csv',
+                                    file_name='data.csv',
                                 
-                                mime='text/csv') 
+                                    mime='text/csv') 
                             
                         expand_cleaned_data = st.expander("Cleaned Data")
                         
@@ -2265,12 +2273,14 @@ def app():
                             
                             st.markdown("""
                             
-                            The data cleaning process is a two steps process: 
+                            The data cleaning process is a three steps process: 
                                 
                             1) LipidCruncher deletes the datapoints that do not pass through the filters: 
                                 either their associated "Rej" value is 1, or their MainGrade is lower than the set minimum, or they have too many missing values.
                             
                             2) LipidCruncher only keeps the relevant columns.
+                            
+                            3) LipidCruncher adds a new column named "old_index" which corresponds to the index of the lipid species in the original dataset. 
                             
                             """)
                     
@@ -2282,24 +2292,39 @@ def app():
                             
                             st.markdown(""" 
                                         
-                                Filtering mass spectrometry data is challenging. However, the most reliable method to filter the data 
+                                Filtering mass spectrometry data is challenging. However, one reliable method to filter the data 
                                 is using "Batch Quality Control (BQC)" samples. Here is how BQC samples are created: take equal amount 
                                 of aliquot from each study sample and pool. Then, create multiple BQC samples by transferring the pooled 
-                                mixture to new tubes. 
-                                
-                                BQC samples that are created as instructed are practically technical replicates. Technical replicates are 
-                                expected to be approximately identical. Therefore, the vast majority of the lipid species must have a very
+                                mixture to new tubes. If the pooled mixture is perfectly homogeneous, the BQC samples will be identical. Therefore, 
+                                there should not be any difference between the readings among all BQC samples. In reality, the pooled mixture is not 
+                                perfectly homogeneous, therefore a low variance in readings is expected. The vast majority of the lipid species 
+                                are expected to have a very
                                 low CoV (i.e. CoV < 30%). The coefficient of variation (CoV) is defined as the ratio of the standard deviation to the mean.
                                 It shows the extent of variability in relation to the mean of the population and is often expressed as a percentage.
                                 The red line in the CoV plot is the line of "30% CoV".
                                 
-                                Here is how LipidCruncher filter data using BQC samples: lipid species with CoV lower than a set threshold (e.g. 30%) are kept
-                                and the rest are removed. The readings with low CoV are highly reliable and the ones with a high CoV are less reliable. 
-                                It seems reasonble to provide the user with the option to filter the data using BQC samples. 
+                                When a datapoint (i.e. a lipid species) has a low CoV (i.e. consistent readings among all BQC samples), that datapoint is highly reliable.
+                                However, when a datapoint has a high CoV (i.e. inconsistent readings among BQC samples), that datapoint is less reliable. 
+                                The high CoV is either the result of the inhomogeneity of the pooled mixture (i.e. valid datapoint) or the error of the instrument
+                                and/or the lipid identification software (i.e. invalid datapoint). Not doing any filtering comes with the risk of accepting some 
+                                invalid datapoints and filtering comes with the risk of rejecting some valid datapoints. It seems reasonable to have the option to run
+                                the analysis with and without BQC filtering and compare the results.   
+                                
+                                Here is how LipidCruncher filters the data using BQC samples: lipid species with CoV lower than a set threshold (e.g. 30%) are kept
+                                and the rest are removed. 
                             
                                 """)
                                 
-                            st.info("Creating BQC samples in any lipidomics experiment is a great practice.")
+                            st.info("""
+                                    
+                                    Creating BQC samples in any lipidomics experiment is a great practice:
+                                        
+                                    1) The vast majority of the lipid species living in BQC samples are expected to have a low CoV. 
+                                       Confirming the above statement is a great check for the overall quality of the dataset. 
+                                    
+                                    2) BQC samples provide a mechanism to separate datapoints with a very high reliablity from the ones that are less reliable. 
+                                    
+                                    """)
                             
                             X = plot_cov(X, cond_lst, rep_lst)
                         
@@ -2321,7 +2346,7 @@ def app():
                                 values are missing without affecting the distribution (as 1 is orders of magnitude smaller than 
                                 the minimum detection threshold by mass spectrometry).
                                 
-                                Visualize the distribution of AUC's in any of the replicates and look for atypical patterns (i.g. too many missing values):
+                                Visualize the distribution of AUC's in any of the replicates and look for atypical patterns (e.g. too many missing values):
         
                                 """)
                         
@@ -2410,7 +2435,7 @@ def app():
                             
                         st.subheader("2.2) Analyze Data")
                             
-                        expand_vol_plot = st.expander("Volcano Plots")
+                        expand_vol_plot = st.expander("Volcano Plots - Test Hypothesis")
                         
                         with expand_vol_plot:
                             
@@ -2440,11 +2465,11 @@ def app():
                             st.info("The outcome of a T-test is most accurate when both samples that are being compared have the same size (i.e. \
                                     equal number of datapoints). Therefore, to create a volcano plot, the best practice is to impute missing values.")
                                 
-                            st.warning("Your choice here only affects the volcano plot, not the rst of the submodule.")
+                            st.warning("Your choice here only affects the volcano plot, not the rest of the submodule.")
                         
                             volcano_plot(X, cond_lst, rep_lst)
                             
-                        expand_sat_plot = st.expander("Saturation Level Plots")
+                        expand_sat_plot = st.expander("Saturation Level Plots - Investigate Saturation Level of Different Lipid Classes")
                         
                         with expand_sat_plot:
                             
