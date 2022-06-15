@@ -10,13 +10,11 @@ from sklearn.preprocessing import scale # Data scaling
 from sklearn import decomposition # PCA
 from scipy import stats
 
-def app():
-
 ##########################################################################################################################################
 # functions used in the main code of the app 
 
     # building LipidXplorer dataframe (only positive or negative mode)
-    def build_single_lipidxplorer_df(lipid_xplorer):
+def build_single_lipidxplorer_df(lipid_xplorer):
         
         with open(lipid_xplorer.name, "wb") as f:
             
@@ -38,7 +36,9 @@ def app():
                 
                 intsta_df['CLASS'] = intsta_df['SPECIES'].apply(lambda x: x.split(' ')[0])
                 
-                if ('FORMULA' and 'MASS' and 'ERROR') in df.columns:
+                cols = df.columns
+                
+                if ('FORMULA' in cols) and ('MASS' in cols) and ('ERROR' in cols) in cols:
                 
                     return df, intsta_df
                 
@@ -59,7 +59,7 @@ def app():
             
             
     # function to extract the internal standards dataframe from the uploaded dataset 
-    def extract_internal_standards(df):
+def extract_internal_standards(df):
     
         mol_lst = df['SPECIES'].values.tolist()
         
@@ -86,7 +86,7 @@ def app():
     
     
     # building LipidXplorer dataframe (merging positive and negatve modes)
-    def build_merged_lipidxplorer_df(pos_df, pos_intsta_df, neg_df, neg_intsta_df):
+def build_merged_lipidxplorer_df(pos_df, pos_intsta_df, neg_df, neg_intsta_df):
         
         st.sidebar.info("""
                         
@@ -261,7 +261,7 @@ def app():
         
         
     # function that builds the side bar for LipidXplorer
-    def build_sidebar(df):
+def build_sidebar(df):
         
         st.sidebar.subheader("Define Experiment")
             
@@ -341,7 +341,7 @@ def app():
     
     
     # function that builds cond_lst and rep_lst objects (conditions list and number of replicates list)
-    def build_cond_rep_lst(n_cond): 
+def build_cond_rep_lst(n_cond): 
     
         '''
         For example: if we have two conditions, WT and KO, and each have two corresponding replicates, 
@@ -366,7 +366,7 @@ def app():
     
     
     # function that creates a text input box to enter the label for each condition
-    def cond_text_input(i):  
+def cond_text_input(i):  
         
         cond = st.sidebar.text_input('Create a label for condition #'+str(i)+' (e.g. WT or KO)')
                 
@@ -377,7 +377,7 @@ def app():
     
             
     # function that creates a text input box to enter the number of replicates corresponding each condition
-    def rep_number_input(i):  
+def rep_number_input(i):  
         
         rep = st.sidebar.number_input('Enter the number of replicates for condition #'+str(i), 
                                               min_value = 1, max_value = 1000, value = 1, step = 1)
@@ -389,7 +389,7 @@ def app():
     
     
     # function to group together samples that belong to the same condition
-    def group_samples(df, cond_lst, rep_lst): 
+def group_samples(df, cond_lst, rep_lst): 
     
         # give user the necessary info
         
@@ -449,8 +449,8 @@ def app():
     
     
     # function to build the aggregate list of rep_lst elements
-    @st.cache
-    def build_rep_lst_agg(rep_lst):  
+@st.cache
+def build_rep_lst_agg(rep_lst):  
             
         '''
         For example, if rep_lst = [2, 4, 5], the rep_lst_agg = [2, 6, 11]
@@ -470,7 +470,7 @@ def app():
     
     
     # function to build a df with two columns: sample names and corresponding conditions
-    def build_group_df(df, cond_lst, rep_lst):  
+def build_group_df(df, cond_lst, rep_lst):  
         
         extensive_cond_lst = [] # list includes the cond correponding to each rep - length equal to the total number of reps 
         
@@ -507,7 +507,7 @@ def app():
     
     
     # function to remove datapoints with too many missing values 
-    def apply_additional_filter(cond_lst, rep_lst):
+def apply_additional_filter(cond_lst, rep_lst):
             
         filtered_conds = st.sidebar.multiselect('Specify which conditions to apply the filter to (remove/add conditions)', cond_lst, cond_lst)
             
@@ -529,8 +529,8 @@ def app():
     
     
     # function that updates the sample names, so, they are consistent with the following format: s1, s2, s3, ..., sN. 
-    @st.cache
-    def update_sample_name(group_df, replicate_lst):  
+@st.cache
+def update_sample_name(group_df, replicate_lst):  
     
         """
         For example, if you have 4 samples with the following names: WT1, WT2, BQC1, BQC2 or s1, s2, s3, s5, then the updated names are s1, s2, s3 and s4.  
@@ -554,7 +554,7 @@ def app():
     
     
     # pairs the replicates with their corresponding condition
-    def build_rep_cond_pair(cond, cond_lst, rep_lst):  
+def build_rep_cond_pair(cond, cond_lst, rep_lst):  
     
         '''
         For example, if cond_lst = [WT, KO] and rep_lst = [2, 2], the function returns:
@@ -579,8 +579,8 @@ def app():
         
         
     # function to build the list of samples (not the number of replicates) for each condition
-    @st.cache
-    def build_sample_lst(cond, cond_lst, rep_lst_agg):  
+@st.cache
+def build_sample_lst(cond, cond_lst, rep_lst_agg):  
         
             '''
             For example, if cond_lst = [WT, KO, HA] and rep_lst = [4, 4, 2], then rep_lst_agg = [4, 8, 10].
@@ -605,7 +605,7 @@ def app():
         
         
     # function to clean/apply filters to the data
-    def apply_filter(df, intsta_df, group_df, rep_lst, cond_lst, filtered_conds, passing_abundance_grade):
+def apply_filter(df, intsta_df, group_df, rep_lst, cond_lst, filtered_conds, passing_abundance_grade):
     
         # initial cleaning 
         
@@ -756,7 +756,7 @@ def app():
     
     
     # function that removes the lipid species that have an abundance grade lower than the minimum abundance grade
-    def build_abundance_grade_filter(X, rep_lst, cond_lst, filtered_conds, passing_abundance_grade):
+def build_abundance_grade_filter(X, rep_lst, cond_lst, filtered_conds, passing_abundance_grade):
         
         rep_lst_agg = build_rep_lst_agg(rep_lst)  
         
@@ -781,8 +781,8 @@ def app():
     
     
     
-    @st.cache
-    def convert_df(dataframe):
+@st.cache
+def convert_df(dataframe):
 
         return dataframe.to_csv().encode('utf-8')
     
@@ -791,8 +791,8 @@ def app():
     
     
     # function to log transform the abundance columns of the df
-    @st.cache
-    def log_transform_df(X, rep_lst):  
+@st.cache
+def log_transform_df(X, rep_lst):  
     
         temp = X.copy()
         
@@ -811,8 +811,8 @@ def app():
     
     
     #function that computes the total abundance grade for each lipid species
-    @st.cache
-    def abundance_level_calculator(intensities, passing_abundance_grade): 
+@st.cache
+def abundance_level_calculator(intensities, passing_abundance_grade): 
         
         '''
         For example: if the passing abundance grade is 3, and condition A has a at least 3 non-zero values, 
@@ -840,7 +840,7 @@ def app():
         
         
     # function to plot the CoV of lipid species
-    def plot_cov(X, cond_lst, rep_lst):  
+def plot_cov(X, cond_lst, rep_lst):  
         
         auc = ['PRECURSORINTENSITY[s'+str(i+1)+']' for i in range(sum(rep_lst))]
         
@@ -937,7 +937,7 @@ def app():
     
     
     # one CoV plot with hover tool
-    def cov_hover(X, sample_lst):  
+def cov_hover(X, sample_lst):  
             
         X['cov'] = X[['PRECURSORINTENSITY['+sample+']' for sample in sample_lst]].apply(lambda x: cov_calculator(x), axis=1)
     
@@ -980,12 +980,12 @@ def app():
     
     
   # calculate CoV
-    @st.cache
-    def cov_calculator(numbers): 
+@st.cache
+def cov_calculator(numbers): 
     
         non_zero_lst = [number for number in numbers if (number>1)]
         
-        if len(non_zero_lst) > 0:
+        if len(non_zero_lst) > 1:
     
             cov = np.std(non_zero_lst)/np.mean(non_zero_lst)*100
             
@@ -1000,12 +1000,12 @@ def app():
     
     
    # calculate mean
-    @st.cache
-    def mean_calculator(numbers): 
+@st.cache
+def mean_calculator(numbers): 
     
         non_zero_lst = [number for number in numbers if (number>1)]
         
-        if len(non_zero_lst) > 0:
+        if len(non_zero_lst) > 1:
     
             mean = np.mean(non_zero_lst)
         
@@ -1021,7 +1021,7 @@ def app():
 
 
     # function to plot histograms 
-    def plot_hist(X, rep_lst, cond_lst):
+def plot_hist(X, rep_lst, cond_lst):
         
         show_hist = st.checkbox('View the distributions of the Area Under the Curve (AUC)')
         
@@ -1080,7 +1080,7 @@ def app():
         
         
     # function to arrange histograms in in subplot style, three histograms per row
-    def arrange_hist(number_rep, temp, full_sample_lst):
+def arrange_hist(number_rep, temp, full_sample_lst):
         
         for i in range(int(round(number_rep/3, 1))):
                             
@@ -1125,7 +1125,7 @@ def app():
     
     
     # function that prepares the histogram plot 
-    def prep_hist(temp, full_sample_lst, index):
+def prep_hist(temp, full_sample_lst, index):
                         
         plt.rcParams['font.size'] = '35'
                     
@@ -1152,7 +1152,7 @@ def app():
     
     
     # pairwise correlation plots
-    def plot_corr(X, cond_lst, rep_lst): 
+def plot_corr(X, cond_lst, rep_lst): 
     
         show_corr = st.checkbox("Run pairwise correlation tests")
         
@@ -1244,7 +1244,7 @@ def app():
     
     
     # plotting PCA
-    def plot_pca(dataframe, rep_lst, cond_lst):
+def plot_pca(dataframe, rep_lst, cond_lst):
     
             temp = dataframe.copy()
             
@@ -1391,8 +1391,8 @@ def app():
         
         
     # PCA math 
-    @st.cache
-    def run_pca(dataframe): # PCA 
+@st.cache
+def run_pca(dataframe): # PCA 
     
             # turning 0's and negative numbers to 1's for log-transformation 
             
@@ -1421,7 +1421,7 @@ def app():
         
         
     # updates the datafraame and rep, cond, full_sample lists after removing a sample
-    def update_df_cond_rep_sample_lst(replicate_lst, condition_lst, r_sample, dataframe): 
+def update_df_cond_rep_sample_lst(replicate_lst, condition_lst, r_sample, dataframe): 
         
         '''
         For example, if we have two conditions, A and B, with 3 replicates each, cond lst = [A, B]
@@ -1486,7 +1486,7 @@ def app():
     
     
     # function to to impute missing values and remove bad samples 
-    def remove_bad_sample(X, rep_lst, cond_lst): 
+def remove_bad_sample(X, rep_lst, cond_lst): 
             
             # removing bad samples
             
@@ -1553,7 +1553,7 @@ def app():
     
 
 # function to normalize AUC data
-    def normalize_auc(X, intsta_df, rep_lst):
+def normalize_auc(X, intsta_df, rep_lst):
         
         # extracting the list of classes for which no internal standard is found 
         
@@ -1661,7 +1661,7 @@ def app():
     
     
 # function that receives the user input on which internal standards to use for classes with no internal standards 
-    def pick_intsta(all_class_lst, intsta_class_lst): 
+def pick_intsta(all_class_lst, intsta_class_lst): 
             
         add_intsta_lst = []
             
@@ -1676,7 +1676,7 @@ def app():
     
     
     # function that creates a select box including the existing list of internal standards 
-    def build_intsta_selectbox(lipid_class, intsta_class_lst):  
+def build_intsta_selectbox(lipid_class, intsta_class_lst):  
         
         added_intsta_class = st.selectbox('Pick a internal standard for ' + lipid_class + ' species', intsta_class_lst)
                 
@@ -1687,7 +1687,7 @@ def app():
     
     
     # function for letting the user input the amount of IS 
-    def build_intsta_mic_mol_lst(intsta_class_lst):
+def build_intsta_mic_mol_lst(intsta_class_lst):
         
         intsta_mic_mol_lst = []
         
@@ -1702,7 +1702,7 @@ def app():
     
     
     # function for letting the user input the amount of IS
-    def build_mic_mol_input_box(lipid_class):
+def build_mic_mol_input_box(lipid_class):
 
         mic_mol = st.number_input('Enter the concentration of ' + lipid_class + ' internal standard species in micromole', 
                                   min_value = 0, max_value = 100000, value = 1, step = 1)
@@ -1714,7 +1714,7 @@ def app():
     
     
 # function for finding the index of IS in intsta_df
-    def find_intsta_index(is_lipid_class, intsta_df):
+def find_intsta_index(is_lipid_class, intsta_df):
             
         intsta_row = intsta_df[intsta_df['CLASS'] == is_lipid_class].index.tolist()[0]
             
@@ -1725,7 +1725,7 @@ def app():
     
     
     # function useful for normalization of data 
-    def compute_normalized_auc(nums1, num2, mic_mol):
+def compute_normalized_auc(nums1, num2, mic_mol):
     
         nums1 = [num/num2*mic_mol for num in nums1]
         
@@ -1736,7 +1736,7 @@ def app():
     
     
     # function that creates all volcano plots
-    def volcano_plot(X, cond_lst, rep_lst):
+def volcano_plot(X, cond_lst, rep_lst):
     
         temp = X.copy()
     
@@ -1814,7 +1814,7 @@ def app():
     
     
     # function that prepares a single volcano plot with hover tool 
-    def volcano_hover(dataframe, selected_class, cond_1, cond_2):
+def volcano_hover(dataframe, selected_class, cond_1, cond_2):
         
         unique_color_lst =[ 'red', 'blue', 'green', 'magenta', 'cyan', 'orange', 'black', 'pink', 'brown', 'yellow', 'purple', \
                             'gray', 'olive', 'chocolate', 'silver', 'darkred', 'khaki', 'skyblue', 'navy', 'orchid', 'deepskyblue', \
@@ -1882,8 +1882,8 @@ def app():
     
     
     # calculate fold change 
-    @st.cache
-    def fc_calculator(num_1, num_2): 
+@st.cache
+def fc_calculator(num_1, num_2): 
         
         non_zero_num_1 = [num for num in num_1 if num > 0]
         
@@ -1903,8 +1903,8 @@ def app():
     
     
     # calculate p-value by running a T-test 
-    @st.cache
-    def p_val_calculator(num_1, num_2):
+@st.cache
+def p_val_calculator(num_1, num_2):
         
         non_zero_num_1 = [num for num in num_1 if num > 0]
         
@@ -1925,7 +1925,7 @@ def app():
     
     
     # function for imputing missing values 
-    def impute_missing_value(X):
+def impute_missing_value(X):
     
         full_sample_lst = ['s'+str(i+1) for i in range(sum(rep_lst))]
                     
@@ -1942,16 +1942,16 @@ def app():
 ##########################################################################################################################################
 # the main code of the app 
 
-    st.header("LipidXplorer Module")
+st.header("LipidXplorer Module")
 
-    st.markdown("""
+st.markdown("""
             
             The following module allows the user to run lipidomics analysis on LipidXplorer datasets. 
             Start by uploading your dataset and completing the next steps on the side bar.
             
             """)
             
-    st.info("""
+st.info("""
         
         A standard LipidXplorer dataset must have the following columns:
             
@@ -1970,13 +1970,13 @@ def app():
         
         """)
 
-    st.sidebar.subheader('Select Mode')
+st.sidebar.subheader('Select Mode')
         
-    mode = st.sidebar.radio('', ['Only positive or negative mode', 'Merge positive and negative modes'])
+mode = st.sidebar.radio('', ['Only positive or negative mode', 'Merge positive and negative modes'])
         
-    st.sidebar.subheader("Upload Data")
+st.sidebar.subheader("Upload Data")
         
-    if mode == 'Only positive or negative mode':
+if mode == 'Only positive or negative mode':
             
             lipid_xplorer = st.sidebar.file_uploader(label='Upload your LipidXplorer dataset', type=['csv'])
             
@@ -1988,7 +1988,7 @@ def app():
                 
                 df = None
             
-    elif mode == 'Merge positive and negative modes':
+elif mode == 'Merge positive and negative modes':
             
             lipid_xplorer_pos = st.sidebar.file_uploader(label='Upload your LipidXplorer dataset in POSITIVE mode', type=['csv'])
             
@@ -2010,7 +2010,7 @@ def app():
                 
                 df = None
 
-    if df is not None:
+if df is not None:
             
             confirm_data, cond_lst, rep_lst, group_df, filtered_conds, passing_abundance_grade = build_sidebar(df)
             
@@ -2019,7 +2019,7 @@ def app():
                 st.subheader("1) Data Cleaning, Exploration, Quality Check & Anomaly Detection")
                         
                 st.markdown("""
-                                    The Data Cleaning, Exploration, Quality Check & anomaly detection submodule allows the user to clean, filter
+                                    The Data Cleaning, Exploration, Quality Check & Anomaly Detection submodule allows the user to clean, filter
                                     and visualize the data, and runs anomaly detection tests on it.
                     
                                     """)
