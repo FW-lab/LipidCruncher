@@ -1,6 +1,6 @@
 import streamlit as st
 from multiapp import MultiApp
-from apps import lipidsearch4, lipidsearch5, lipidxplorer # import modules 
+from apps import lipidsearch4, lipidxplorer # import modules 
 
 app = MultiApp()
 
@@ -16,7 +16,6 @@ LipidCruncher is a web app that allows the user to perform lipidomics analysis o
 
 # Add all your application here
 app.add_app("LipidSearch 4.1 Module", lipidsearch4.app)
-app.add_app("LipidSearch 5.0 Module", lipidsearch4.app)
 app.add_app("LipidXplorer Module", lipidxplorer.app)
 # The main app
 app.run()
