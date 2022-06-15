@@ -11,10 +11,12 @@ from sklearn import decomposition # PCA
 from scipy import stats
 from bokeh.transform import dodge
 
+def app():
+
 ##########################################################################################################################################
 # functions used in the main code of the app 
 
-def build_lipidsearch_df(lipid_search): # function that creates a pandas dataframe out of the uploaded LipidSearch dataset
+    def build_lipidsearch_df(lipid_search): # function that creates a pandas dataframe out of the uploaded LipidSearch dataset
     
         with open(lipid_search.name, "wb") as f:
             
@@ -67,9 +69,7 @@ def build_lipidsearch_df(lipid_search): # function that creates a pandas datafra
                 
                 df = pd.read_csv('trimmed_'+lipid_search.name, delimiter = "\t", error_bad_lines=False)
                 
-                cols = df.columns.values.tolist()
-                
-                if ('LipidMolec' in cols) and ('Class' in cols) and ('Calc Mass' in cols) and ('BaseRt' in cols):
+                if ('LipidMolec' and 'Class' and 'Calc Mass' and 'BaseRt') in df.columns.values.tolist():
                 
                     return df
                 
@@ -83,9 +83,7 @@ def build_lipidsearch_df(lipid_search): # function that creates a pandas datafra
                 
                 df = pd.read_csv('trimmed_'+lipid_search.name, error_bad_lines=False)
                 
-                cols = df.columns.values.tolist()
-                
-                if ('LipidMolec' in cols) and ('Class' in cols) and ('Calc Mass' in cols) and ('BaseRt' in cols):
+                if ('LipidMolec' and 'Class' and 'Calc Mass' and 'BaseRt') in df.columns.values.tolist():
                     
                     return df
                 
@@ -100,7 +98,7 @@ def build_lipidsearch_df(lipid_search): # function that creates a pandas datafra
 
 
     # function that builds the side bar
-def build_sidebar(df):   
+    def build_sidebar(df):   
             
         st.sidebar.subheader("Define Experiment")
             
@@ -199,7 +197,7 @@ def build_sidebar(df):
                
                
     # function that builds cond_lst and rep_lst objects (conditions list and number of replicates list)
-def build_cond_rep_lst(n_cond): 
+    def build_cond_rep_lst(n_cond): 
     
         '''
         For example: if we have two conditions, WT and KO, and each have two corresponding replicates, 
@@ -225,7 +223,7 @@ def build_cond_rep_lst(n_cond):
     
             
     # function that creates a text input box to enter the label for each condition
-def cond_text_input(i):  
+    def cond_text_input(i):  
         
         cond = st.sidebar.text_input('Create a label for condition #'+str(i)+' (e.g. WT or KO)')
                 
@@ -236,7 +234,7 @@ def cond_text_input(i):
     
             
     # function that creates a text input box to enter the number of replicates corresponding each condition
-def rep_number_input(i):  
+    def rep_number_input(i):  
         
         rep = st.sidebar.number_input('Enter the number of replicates for condition #'+str(i), 
                                               min_value = 1, max_value = 1000, value = 1, step = 1)
@@ -248,8 +246,8 @@ def rep_number_input(i):
     
     
     # function to build the aggregate list of rep_lst elements
-@st.cache
-def build_rep_lst_agg(rep_lst):  
+    @st.cache
+    def build_rep_lst_agg(rep_lst):  
             
         '''
         For example, if rep_lst = [2, 4, 5], the rep_lst_agg = [2, 6, 11]
@@ -269,7 +267,7 @@ def build_rep_lst_agg(rep_lst):
     
     
     # function to build a df with two columns: sample names and corresponding conditions
-def build_group_df(df, cond_lst, rep_lst):  
+    def build_group_df(df, cond_lst, rep_lst):  
         
         extensive_cond_lst = [] # list includes the cond correponding to each rep - length equal to the total number of reps 
         
@@ -304,7 +302,7 @@ def build_group_df(df, cond_lst, rep_lst):
     
     
     # function to group together samples that belong to the same condition
-def group_samples(df, cond_lst, rep_lst): 
+    def group_samples(df, cond_lst, rep_lst): 
     
         # give user the necessary info
         
@@ -364,7 +362,7 @@ def group_samples(df, cond_lst, rep_lst):
     
     
     # function to remove datapoints with too many missing values 
-def apply_additional_filter(cond_lst, rep_lst):
+    def apply_additional_filter(cond_lst, rep_lst):
             
         filtered_conds = st.sidebar.multiselect('Specify which conditions to apply the filter to (remove/add conditions)', cond_lst, cond_lst)
             
@@ -386,8 +384,8 @@ def apply_additional_filter(cond_lst, rep_lst):
     
     
     # function that updates the sample names, so, they are consistent with the following format: s1, s2, s3, ..., sN. 
-@st.cache
-def update_sample_name(group_df, replicate_lst):  
+    @st.cache
+    def update_sample_name(group_df, replicate_lst):  
     
         """
         For example, if you have 4 samples with the following names: WT1, WT2, BQC1, BQC2 or s1, s2, s3, s5, then the updated names are s1, s2, s3 and s4.  
@@ -411,7 +409,7 @@ def update_sample_name(group_df, replicate_lst):
     
     
     # pairs the replicates with their corresponding condition
-def build_rep_cond_pair(cond, cond_lst, rep_lst):  
+    def build_rep_cond_pair(cond, cond_lst, rep_lst):  
     
         '''
         For example, if cond_lst = [WT, KO] and rep_lst = [2, 2], the function returns:
@@ -436,8 +434,8 @@ def build_rep_cond_pair(cond, cond_lst, rep_lst):
         
         
     # function to build the list of samples (not the number of replicates) for each condition
-@st.cache
-def build_sample_lst(cond, cond_lst, rep_lst_agg):  
+    @st.cache
+    def build_sample_lst(cond, cond_lst, rep_lst_agg):  
         
             '''
             For example, if cond_lst = [WT, KO, HA] and rep_lst = [4, 4, 2], then rep_lst_agg = [4, 8, 10].
@@ -461,8 +459,8 @@ def build_sample_lst(cond, cond_lst, rep_lst_agg):
         
         
         
-@st.cache
-def convert_df(dataframe):
+    @st.cache
+    def convert_df(dataframe):
 
         return dataframe.to_csv().encode('utf-8')
     
@@ -471,7 +469,7 @@ def convert_df(dataframe):
     
     
     # function to apply filters to the data
-def apply_filter(df, rep_lst, cond_lst, name_df, passing_letter_grade, filtered_conds, passing_abundance_grade): 
+    def apply_filter(df, rep_lst, cond_lst, name_df, passing_letter_grade, filtered_conds, passing_abundance_grade): 
     
             X = df[['Rej','LipidMolec', 'Class', 'Calc Mass', 'BaseRt'] + ['MainArea[' + sample + ']' for sample in name_df['old name']] + \
                    ['MainGrade['+ sample +']' for sample in name_df['old name']]]
@@ -560,7 +558,7 @@ def apply_filter(df, rep_lst, cond_lst, name_df, passing_letter_grade, filtered_
         
         
     # function to plot the CoV of lipid species
-def plot_cov(X, cond_lst, rep_lst):  
+    def plot_cov(X, cond_lst, rep_lst):  
         
         auc = ['MainArea[s'+str(i+1)+']' for i in range(sum(rep_lst))]
         
@@ -657,7 +655,7 @@ def plot_cov(X, cond_lst, rep_lst):
         
         
     # one CoV plot with hover tool
-def cov_hover(X, sample_lst):  
+    def cov_hover(X, sample_lst):  
             
         X['cov'] = X[['MainArea['+sample+']' for sample in sample_lst]].apply(lambda x: cov_calculator(x), axis=1)
     
@@ -700,12 +698,12 @@ def cov_hover(X, sample_lst):
     
     
     # calculate CoV
-@st.cache
-def cov_calculator(numbers): 
+    @st.cache
+    def cov_calculator(numbers): 
     
         non_zero_lst = [number for number in numbers if (number>1)]
     
-        if len(non_zero_lst) > 1:
+        if len(non_zero_lst) > 0:
 
             cov = np.std(non_zero_lst)/np.mean(non_zero_lst)*100
         
@@ -720,12 +718,12 @@ def cov_calculator(numbers):
     
     
  # calculate mean
-@st.cache
-def mean_calculator(numbers): 
+    @st.cache
+    def mean_calculator(numbers): 
     
         non_zero_lst = [number for number in numbers if (number>1)]
     
-        if len(non_zero_lst) > 1:
+        if len(non_zero_lst) > 0:
 
             mean = np.mean(non_zero_lst)
     
@@ -742,8 +740,8 @@ def mean_calculator(numbers):
         
         
     # function that computes the total main grade for each lipid species
-@st.cache
-def letter_grade_calculator(letters, passing_letter_grade):  
+    @st.cache
+    def letter_grade_calculator(letters, passing_letter_grade):  
         
                     counter = 0
                     
@@ -766,7 +764,7 @@ def letter_grade_calculator(letters, passing_letter_grade):
                     
                     
     # function that removes the lipid species that have an abundance grade lower than the minimum abundance grade
-def build_abundance_grade_filter(X, rep_lst, cond_lst, filtered_conds, passing_abundance_grade):
+    def build_abundance_grade_filter(X, rep_lst, cond_lst, filtered_conds, passing_abundance_grade):
         
         rep_lst_agg = build_rep_lst_agg(rep_lst)  
         
@@ -792,8 +790,8 @@ def build_abundance_grade_filter(X, rep_lst, cond_lst, filtered_conds, passing_a
     
     
     #function that computes the total abundance grade for each lipid species
-@st.cache
-def abundance_level_calculator(intensities, passing_abundance_grade): 
+    @st.cache
+    def abundance_level_calculator(intensities, passing_abundance_grade): 
         
         '''
         For example: if the passing abundance grade is 3, and condition A has a at least 3 non-zero values, 
@@ -821,8 +819,8 @@ def abundance_level_calculator(intensities, passing_abundance_grade):
         
         
     # function to log transform the abundance columns of the df
-@st.cache
-def log_transform_df(X, rep_lst):  
+    @st.cache
+    def log_transform_df(X, rep_lst):  
     
         temp = X.copy()
         
@@ -841,7 +839,7 @@ def log_transform_df(X, rep_lst):
     
     
     # function to plot histograms 
-def plot_hist(X, rep_lst, cond_lst):
+    def plot_hist(X, rep_lst, cond_lst):
         
         show_hist = st.checkbox('View the distributions of the Area Under the Curve (AUC)')
         
@@ -900,7 +898,7 @@ def plot_hist(X, rep_lst, cond_lst):
         
         
     # function to arrange histograms in in subplot style, three histograms per row
-def arrange_hist(number_rep, temp, full_sample_lst):
+    def arrange_hist(number_rep, temp, full_sample_lst):
         
         for i in range(int(round(number_rep/3, 1))):
                             
@@ -945,7 +943,7 @@ def arrange_hist(number_rep, temp, full_sample_lst):
     
     
     # function that prepares the histogram plot 
-def prep_hist(temp, full_sample_lst, index):
+    def prep_hist(temp, full_sample_lst, index):
                         
         plt.rcParams['font.size'] = '35'
                     
@@ -972,7 +970,7 @@ def prep_hist(temp, full_sample_lst, index):
     
     
     # all retention time plots
-def plot_retention(X, cond_lst, rep_lst):  
+    def plot_retention(X, cond_lst, rep_lst):  
     
             temp = X.copy()
             
@@ -1047,7 +1045,7 @@ def plot_retention(X, cond_lst, rep_lst):
         
         
     # plots a single retention time plot with hover tool
-def retention_hover(temp, rep_lst, cond_lst, class_name):  
+    def retention_hover(temp, rep_lst, cond_lst, class_name):  
             
             retention = temp[temp['Class'] == class_name]['BaseRt'].values.tolist()
             
@@ -1086,7 +1084,7 @@ def retention_hover(temp, rep_lst, cond_lst, class_name):
         
         
     # comparison mode - retention time plot 
-def retention_multi(temp, rep_lst, selected_class): 
+    def retention_multi(temp, rep_lst, selected_class): 
         
         unique_color_lst =[ 'red', 'blue', 'green', 'magenta', 'cyan', 'orange', 'black', 'pink', 'brown', 'yellow', 'purple', \
                             'gray', 'olive', 'chocolate', 'silver', 'darkred', 'khaki', 'skyblue', 'navy', 'orchid']
@@ -1135,7 +1133,7 @@ def retention_multi(temp, rep_lst, selected_class):
     
     
     # pairwise correlation plots
-def plot_corr(X, cond_lst, rep_lst): 
+    def plot_corr(X, cond_lst, rep_lst): 
     
         show_corr = st.checkbox("Run pairwise correlation tests")
         
@@ -1227,7 +1225,7 @@ def plot_corr(X, cond_lst, rep_lst):
     
     
     # plotting PCA
-def plot_pca(dataframe, rep_lst, cond_lst):
+    def plot_pca(dataframe, rep_lst, cond_lst):
     
             temp = dataframe.copy()
             
@@ -1374,8 +1372,8 @@ def plot_pca(dataframe, rep_lst, cond_lst):
         
         
     # PCA math 
-@st.cache
-def run_pca(dataframe): # PCA 
+    @st.cache
+    def run_pca(dataframe): # PCA 
     
             # turning 0's and negative numbers to 1's for log-transformation 
             
@@ -1404,7 +1402,7 @@ def run_pca(dataframe): # PCA
         
         
     # updates the datafraame and rep, cond, full_sample lists after removing a sample
-def update_df_cond_rep_sample_lst(replicate_lst, condition_lst, r_sample, dataframe): 
+    def update_df_cond_rep_sample_lst(replicate_lst, condition_lst, r_sample, dataframe): 
         
         '''
         For example, if we have two conditions, A and B, with 3 replicates each, cond lst = [A, B]
@@ -1469,7 +1467,7 @@ def update_df_cond_rep_sample_lst(replicate_lst, condition_lst, r_sample, datafr
     
     
     # function to to impute missing values and remove bad samples 
-def remove_bad_sample(X, rep_lst, cond_lst): 
+    def remove_bad_sample(X, rep_lst, cond_lst): 
             
             # removing bad samples
             
@@ -1537,7 +1535,7 @@ def remove_bad_sample(X, rep_lst, cond_lst):
         
         
     # function for imputing missing values 
-def impute_missing_value(X):
+    def impute_missing_value(X):
     
         full_sample_lst = ['s'+str(i+1) for i in range(sum(rep_lst))]
                 
@@ -1556,7 +1554,7 @@ def impute_missing_value(X):
 
 
     # function that creates all volcano plots
-def volcano_plot(X, cond_lst, rep_lst):
+    def volcano_plot(X, cond_lst, rep_lst):
     
         temp = X.copy()
     
@@ -1634,7 +1632,7 @@ def volcano_plot(X, cond_lst, rep_lst):
     
     
     # function that prepares a single volcano plot with hover tool 
-def volcano_hover(dataframe, selected_class, cond_1, cond_2):
+    def volcano_hover(dataframe, selected_class, cond_1, cond_2):
         
         unique_color_lst =[ 'red', 'blue', 'green', 'magenta', 'cyan', 'orange', 'black', 'pink', 'brown', 'yellow', 'purple', \
                             'gray', 'olive', 'chocolate', 'silver', 'darkred', 'khaki', 'skyblue', 'navy', 'orchid', 'deepskyblue', \
@@ -1702,8 +1700,8 @@ def volcano_hover(dataframe, selected_class, cond_1, cond_2):
     
     
     # calculate fold change 
-@st.cache
-def fc_calculator(num_1, num_2): 
+    @st.cache
+    def fc_calculator(num_1, num_2): 
         
         non_zero_num_1 = [num for num in num_1 if num > 0]
         
@@ -1723,8 +1721,8 @@ def fc_calculator(num_1, num_2):
     
     
     # calculate p-value by running a T-test 
-@st.cache
-def p_val_calculator(num_1, num_2):
+    @st.cache
+    def p_val_calculator(num_1, num_2):
         
         non_zero_num_1 = [num for num in num_1 if num > 0]
         
@@ -1745,13 +1743,9 @@ def p_val_calculator(num_1, num_2):
     
     
     # function to perform saturation level analysis 
-def saturation_level_plot(X, cond_lst, rep_lst):
+    def saturation_level_plot(X, cond_lst, rep_lst):
     
         temp = X.copy()
-        
-        auc = ['MeanArea[s'+str(i+1)+']' for i in range(sum(rep_lst))]
-        
-        temp[auc]=temp[auc].mask(temp[auc]<=1).fillna(1)
                     
         rep_lst_agg = build_rep_lst_agg(rep_lst)
         
@@ -1779,7 +1773,7 @@ def saturation_level_plot(X, cond_lst, rep_lst):
     
     
     
-def saturation_level_plot_bar(dataframe, rep_lst_agg, cond_lst):
+    def saturation_level_plot_bar(dataframe, rep_lst_agg, cond_lst):
     
         for lipid_class in dataframe['Class'].unique():
         
@@ -1898,7 +1892,7 @@ def saturation_level_plot_bar(dataframe, rep_lst_agg, cond_lst):
 
 
 
-def saturation_level_plot_stack(dataframe, rep_lst_agg, cond_lst):
+    def saturation_level_plot_stack(dataframe, rep_lst_agg, cond_lst):
     
         for lipid_class in dataframe['Class'].unique():
             
@@ -1986,7 +1980,7 @@ def saturation_level_plot_stack(dataframe, rep_lst_agg, cond_lst):
 
 
 
-def saturation_level_plot_percentage(dataframe, rep_lst_agg, cond_lst):
+    def saturation_level_plot_percentage(dataframe, rep_lst_agg, cond_lst):
     
         for lipid_class in dataframe['Class'].unique():
             
@@ -2077,8 +2071,8 @@ def saturation_level_plot_percentage(dataframe, rep_lst_agg, cond_lst):
     
     
     # function to calculate the ratio of sfa, mufa and pufa for each lipid species 
-@st.cache
-def calculate_FA_ratio(mol_structure):
+    @st.cache
+    def calculate_FA_ratio(mol_structure):
             
         a = mol_structure.split('(')
         
@@ -2141,8 +2135,8 @@ def calculate_FA_ratio(mol_structure):
     
     
  # function to calculate the abundance of sfa, mufa and pufa for each lipid species 
-@st.cache
-def calculate_SFA_MUFA_PUFA(dataframe, lipid_class, cond, sample_lst):
+    @st.cache
+    def calculate_SFA_MUFA_PUFA(dataframe, lipid_class, cond, sample_lst):
         
         dataframe = dataframe[dataframe['Class'] == lipid_class]
         
@@ -2191,16 +2185,16 @@ def calculate_SFA_MUFA_PUFA(dataframe, lipid_class, cond, sample_lst):
 ##########################################################################################################################################
 # the main code of the app 
 
-st.header("LipidSearch 4.1 Module")
+    st.header("LipidSearch 4.1 Module")
 
-st.markdown("""
+    st.markdown("""
             
             The following module allows the user to run lipidomics analysis on LipidSearch 4.1 datasets. 
             Start by uploading your dataset and completing the next steps on the side bar.
             
             """)
             
-st.info("""
+    st.info("""
         
         A standard LipidSearch dataset must have the following columns:
             
@@ -2223,11 +2217,11 @@ st.info("""
         
         """)
     
-st.sidebar.subheader("Upload Data")
+    st.sidebar.subheader("Upload Data")
             
-lipid_search = st.sidebar.file_uploader(label='Upload your LipidSearch 4.1 dataset', type=['csv', 'txt'])
+    lipid_search = st.sidebar.file_uploader(label='Upload your LipidSearch 4.1 dataset', type=['csv', 'txt'])
             
-if lipid_search is not None:
+    if lipid_search is not None:
                 
                 df = build_lipidsearch_df(lipid_search)
                 
@@ -2244,7 +2238,7 @@ if lipid_search is not None:
                         st.subheader("1) Data Cleaning, Exploration, Quality Check & Anomaly Detection")
                                 
                         st.markdown("""
-                                            The Data Cleaning, Exploration, Quality Check & Anomaly Detection submodule allows the user to clean, filter
+                                            The Data Cleaning, Exploration, Quality Check & anomaly detection submodule allows the user to clean, filter
                                             and visualize the data, and runs anomaly detection tests on it.
                             
                                             """)
@@ -2433,7 +2427,7 @@ if lipid_search is not None:
                                             
                         st.subheader("2.1) Remove Anomalies")
                     
-                        expand_cleaned_data = st.expander("Remove Anomalies (and/or Blank Samples)")
+                        expand_cleaned_data = st.expander("Remove Anomalies")
                         
                         with expand_cleaned_data:
 
