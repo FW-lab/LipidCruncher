@@ -11,70 +11,72 @@ from sklearn import decomposition # PCA
 from scipy import stats
 from bokeh.transform import dodge
 
+def app():
+
 ##########################################################################################################################################
 # functions used in the main code of the app
 
-def build_lipidsearch_df(lipidsearch):
-    
-    with open(lipid_search.name, "wb") as f:
+    def build_lipidsearch_df(lipidsearch):
         
-        f.write(lipid_search.getbuffer()) # saves the file in the app directory
+        with open(lipid_search.name, "wb") as f:
+            
+            f.write(lipid_search.getbuffer()) # saves the file in the app directory
+            
+        if ".txt" in lipid_search.name:
+                
+                df = txt_to_df(lipid_search.name)
+                
+                cols = df.columns.values.tolist()
+                
+                if ('Rej' in cols) and ('LipidMolec' in cols) and ('ClassKey' in cols) and ('FAKey' in cols) and ('CalcMass in cols') and ('BaseRt' in cols):
+                
+                    return df
+                
+                else:
+                    
+                    st.sidebar.error('This is not a valid LipidSearch dataset!')
+                    
+                    return None
+                
+        elif ".csv" in lipid_search.name:
+                
+                df = csv_to_df(lipid_search.name)
+                
+                cols = df.columns.values.tolist()
+                
+                if ('Rej' in cols) and ('LipidMolec' in cols) and ('ClassKey' in cols) and ('FAKey' in cols) and ('CalcMass in cols') and ('BaseRt' in cols):
+                    
+                    return df
+                
+                else:
+                    
+                    st.sidebar.error('This is not a valid LipidSearch dataset!')
+                    
+                    return None
+            
+            
+            
+            
+    @st.cache
+    def txt_to_df(dataset):
         
-    if ".txt" in lipid_search.name:
-            
-            df = txt_to_df(lipid_search.name)
-            
-            cols = df.columns.values.tolist()
-            
-            if ('Rej' in cols) and ('LipidMolec' in cols) and ('ClassKey' in cols) and ('FAKey' in cols) and ('CalcMass in cols') and ('BaseRt' in cols):
-            
-                return df
-            
-            else:
-                
-                st.sidebar.error('This is not a valid LipidSearch dataset!')
-                
-                return None
-            
-    elif ".csv" in lipid_search.name:
-            
-            df = csv_to_df(lipid_search.name)
-            
-            cols = df.columns.values.tolist()
-            
-            if ('Rej' in cols) and ('LipidMolec' in cols) and ('ClassKey' in cols) and ('FAKey' in cols) and ('CalcMass in cols') and ('BaseRt' in cols):
-                
-                return df
-            
-            else:
-                
-                st.sidebar.error('This is not a valid LipidSearch dataset!')
-                
-                return None
-            
-            
-            
-            
-@st.cache
-def txt_to_df(dataset):
+        return pd.read_csv(lipid_search.name, delimiter = "\t", error_bad_lines=False)
     
-    return pd.read_csv(lipid_search.name, delimiter = "\t", error_bad_lines=False)
-
-
-
-
-
-@st.cache
-def csv_to_df(dataset):
     
-    return pd.read_csv(lipid_search.name, error_bad_lines=False)
+    
+    
+    
+    @st.cache
+    def csv_to_df(dataset):
+        
+        return pd.read_csv(lipid_search.name, error_bad_lines=False)
 
 
 
 
 
 # function that builds the side bar
-def build_sidebar(df):   
+    def build_sidebar(df):   
             
         st.sidebar.subheader("Define Experiment")
             
@@ -143,31 +145,31 @@ def build_sidebar(df):
     
     
     
-@st.cache
-def check_input_validity(df, rep_lst):
-    
-    counter = 0 
-    
-    for column in df.columns:
+    @st.cache
+    def check_input_validity(df, rep_lst):
         
-        if ('MeanArea[s' in column) and ('Org' not in column):
-            
-            counter = counter + 1
-            
-    if counter == sum(rep_lst):
+        counter = 0 
         
-        return True
-    
-    else:
-    
-        return False 
+        for column in df.columns:
+            
+            if ('MeanArea[s' in column) and ('Org' not in column):
+                
+                counter = counter + 1
+                
+        if counter == sum(rep_lst):
+            
+            return True
+        
+        else:
+        
+            return False 
     
     
     
     
     
 # function that builds cond_lst and rep_lst objects (conditions list and number of replicates list)
-def build_cond_rep_lst(n_cond): 
+    def build_cond_rep_lst(n_cond): 
     
         '''
         For example: if we have two conditions, WT and KO, and each have two corresponding replicates, 
@@ -192,7 +194,7 @@ def build_cond_rep_lst(n_cond):
     
     
 # function that creates a text input box to enter the label for each condition
-def cond_text_input(i):  
+    def cond_text_input(i):  
         
         cond = st.sidebar.text_input('Create a label for condition #'+str(i)+' (e.g. WT or KO)')
                 
@@ -203,7 +205,7 @@ def cond_text_input(i):
     
             
     # function that creates a text input box to enter the number of replicates corresponding each condition
-def rep_number_input(i):  
+    def rep_number_input(i):  
         
         rep = st.sidebar.number_input('Enter the number of replicates for condition #'+str(i), 
                                               min_value = 1, max_value = 1000, value = 1, step = 1)
@@ -215,7 +217,7 @@ def rep_number_input(i):
     
     
 # function to group together samples that belong to the same condition
-def group_samples(df, cond_lst, rep_lst): 
+    def group_samples(df, cond_lst, rep_lst): 
     
         # give user the necessary info
         
@@ -275,7 +277,7 @@ def group_samples(df, cond_lst, rep_lst):
     
     
  # function to remove datapoints with too many missing values 
-def apply_additional_filter(cond_lst, rep_lst):
+    def apply_additional_filter(cond_lst, rep_lst):
             
         filtered_conds = st.sidebar.multiselect('Specify which conditions to apply the filter to (remove/add conditions)', cond_lst, cond_lst)
             
@@ -297,8 +299,8 @@ def apply_additional_filter(cond_lst, rep_lst):
     
     
  # function that updates the sample names, so, they are consistent with the following format: s1, s2, s3, ..., sN. 
-@st.cache
-def update_sample_name(group_df, replicate_lst):  
+    @st.cache
+    def update_sample_name(group_df, replicate_lst):  
     
         """
         For example, if you have 4 samples with the following names: WT1, WT2, BQC1, BQC2 or s1, s2, s3, s5, then the updated names are s1, s2, s3 and s4.  
@@ -322,7 +324,7 @@ def update_sample_name(group_df, replicate_lst):
     
     
 # pairs the replicates with their corresponding condition
-def build_rep_cond_pair(cond, cond_lst, rep_lst):  
+    def build_rep_cond_pair(cond, cond_lst, rep_lst):  
     
         '''
         For example, if cond_lst = [WT, KO] and rep_lst = [2, 2], the function returns:
@@ -347,8 +349,8 @@ def build_rep_cond_pair(cond, cond_lst, rep_lst):
         
         
  # function to build the aggregate list of rep_lst elements
-@st.cache
-def build_rep_lst_agg(rep_lst):  
+    @st.cache
+    def build_rep_lst_agg(rep_lst):  
             
         '''
         For example, if rep_lst = [2, 4, 5], the rep_lst_agg = [2, 6, 11]
@@ -368,7 +370,7 @@ def build_rep_lst_agg(rep_lst):
     
     
  # function to build a df with two columns: sample names and corresponding conditions
-def build_group_df(df, cond_lst, rep_lst):  
+    def build_group_df(df, cond_lst, rep_lst):  
         
         extensive_cond_lst = [] # list includes the cond correponding to each rep - length equal to the total number of reps 
         
@@ -394,28 +396,28 @@ def build_group_df(df, cond_lst, rep_lst):
     
     
     
-@st.cache
-def build_main_area_col_lst(df):
+    @st.cache
+    def build_main_area_col_lst(df):
     
-    main_area_col_lst = []
-     
-    for col in df.columns:
+        main_area_col_lst = []
          
-         if ('MeanArea[s' in col) and ('Org' not in col):
+        for col in df.columns:
              
-             main_area_col_lst.append(int(col[10:-1]))
-    
-    main_area_col_lst.sort()
-             
-    return main_area_col_lst
+             if ('MeanArea[s' in col) and ('Org' not in col):
+                 
+                 main_area_col_lst.append(int(col[10:-1]))
+        
+        main_area_col_lst.sort()
+                 
+        return main_area_col_lst
     
     
     
     
     
  # function to build the list of samples (not the number of replicates) for each condition
-@st.cache
-def build_sample_lst(cond, cond_lst, rep_lst_agg):  
+    @st.cache
+    def build_sample_lst(cond, cond_lst, rep_lst_agg):  
         
             '''
             For example, if cond_lst = [WT, KO, HA] and rep_lst = [4, 4, 2], then rep_lst_agg = [4, 8, 10].
@@ -439,8 +441,8 @@ def build_sample_lst(cond, cond_lst, rep_lst_agg):
         
         
         
-@st.cache
-def convert_df(dataframe):
+    @st.cache
+    def convert_df(dataframe):
 
         return dataframe.to_csv().encode('utf-8')
     
@@ -449,7 +451,7 @@ def convert_df(dataframe):
     
     
 # function to apply filters to the data
-def clean_data(df, rep_lst, cond_lst, name_df, filtered_conds, passing_abundance_grade): 
+    def clean_data(df, rep_lst, cond_lst, name_df, filtered_conds, passing_abundance_grade): 
     
             temp = df[['Rej','LipidMolec', 'ClassKey', 'FAKey', 'CalcMass', 'BaseRt'] + ['MeanArea[' + sample + ']' for sample in name_df['old name']]]
         
@@ -529,26 +531,26 @@ def clean_data(df, rep_lst, cond_lst, name_df, filtered_conds, passing_abundance
         
         
         
-@st.cache
-def build_agg_df(dataframe, total_reps):
+    @st.cache
+    def build_agg_df(dataframe, total_reps):
     
-    X1 = dataframe.groupby(["LipidMolec", 'ClassKey', 'FAKey'])[["MeanArea[s" + str(i+1) + ']' for i in range(total_reps)]].sum()
-    
-    X1.reset_index(inplace = True)
-    
-    X2 = dataframe.groupby(["LipidMolec"])[['CalcMass', 'BaseRt']].mean()
-    
-    X2.reset_index(inplace = True)
-    
-    return X1, X2 
+        X1 = dataframe.groupby(["LipidMolec", 'ClassKey', 'FAKey'])[["MeanArea[s" + str(i+1) + ']' for i in range(total_reps)]].sum()
+        
+        X1.reset_index(inplace = True)
+        
+        X2 = dataframe.groupby(["LipidMolec"])[['CalcMass', 'BaseRt']].mean()
+        
+        X2.reset_index(inplace = True)
+        
+        return X1, X2 
         
         
         
         
         
 # function to log transform the abundance columns of the df
-@st.cache
-def log_transform_df(X, rep_lst):  
+    @st.cache
+    def log_transform_df(X, rep_lst):  
     
         temp = X.copy()
         
@@ -567,7 +569,7 @@ def log_transform_df(X, rep_lst):
 
 
  # function that removes the lipid species that have an abundance grade lower than the minimum abundance grade
-def build_abundance_grade_filter(X, rep_lst, cond_lst, filtered_conds, passing_abundance_grade):
+    def build_abundance_grade_filter(X, rep_lst, cond_lst, filtered_conds, passing_abundance_grade):
         
         rep_lst_agg = build_rep_lst_agg(rep_lst)  
         
@@ -593,8 +595,8 @@ def build_abundance_grade_filter(X, rep_lst, cond_lst, filtered_conds, passing_a
     
     
  #function that computes the total abundance grade for each lipid species
-@st.cache
-def abundance_level_calculator(intensities, passing_abundance_grade): 
+    @st.cache
+    def abundance_level_calculator(intensities, passing_abundance_grade): 
         
         '''
         For example: if the passing abundance grade is 3, and condition A has a at least 3 non-zero values, 
@@ -622,7 +624,7 @@ def abundance_level_calculator(intensities, passing_abundance_grade):
         
         
 # function to plot histograms 
-def plot_hist(X, rep_lst, cond_lst):
+    def plot_hist(X, rep_lst, cond_lst):
         
         show_hist = st.checkbox('View the distributions of the Area Under the Curve (AUC)')
         
@@ -681,7 +683,7 @@ def plot_hist(X, rep_lst, cond_lst):
         
         
     # function to arrange histograms in in subplot style, three histograms per row
-def arrange_hist(number_rep, temp, full_sample_lst):
+    def arrange_hist(number_rep, temp, full_sample_lst):
         
         for i in range(int(round(number_rep/3, 1))):
                             
@@ -726,7 +728,7 @@ def arrange_hist(number_rep, temp, full_sample_lst):
     
     
     # function that prepares the histogram plot 
-def prep_hist(temp, full_sample_lst, index):
+    def prep_hist(temp, full_sample_lst, index):
                         
         plt.rcParams['font.size'] = '35'
                     
@@ -753,7 +755,7 @@ def prep_hist(temp, full_sample_lst, index):
     
     
 # all retention time plots
-def plot_retention(X, cond_lst, rep_lst):  
+    def plot_retention(X, cond_lst, rep_lst):  
     
             temp = X.copy()
             
@@ -828,7 +830,7 @@ def plot_retention(X, cond_lst, rep_lst):
         
         
     # plots a single retention time plot with hover tool
-def retention_hover(temp, rep_lst, cond_lst, class_name):  
+    def retention_hover(temp, rep_lst, cond_lst, class_name):  
             
             retention = temp[temp['ClassKey'] == class_name]['BaseRt'].values.tolist()
             
@@ -867,7 +869,7 @@ def retention_hover(temp, rep_lst, cond_lst, class_name):
         
         
     # comparison mode - retention time plot 
-def retention_multi(temp, rep_lst, selected_class): 
+    def retention_multi(temp, rep_lst, selected_class): 
         
         unique_color_lst =[ 'red', 'blue', 'green', 'magenta', 'cyan', 'orange', 'black', 'pink', 'brown', 'yellow', 'purple', \
                             'gray', 'olive', 'chocolate', 'silver', 'darkred', 'khaki', 'skyblue', 'navy', 'orchid']
@@ -916,7 +918,7 @@ def retention_multi(temp, rep_lst, selected_class):
     
     
  # pairwise correlation plots
-def plot_corr(X, cond_lst, rep_lst): 
+    def plot_corr(X, cond_lst, rep_lst): 
     
         show_corr = st.checkbox("Run pairwise correlation tests")
         
@@ -1008,7 +1010,7 @@ def plot_corr(X, cond_lst, rep_lst):
     
     
  # plotting PCA
-def plot_pca(dataframe, rep_lst, cond_lst):
+    def plot_pca(dataframe, rep_lst, cond_lst):
     
             temp = dataframe.copy()
             
@@ -1155,8 +1157,8 @@ def plot_pca(dataframe, rep_lst, cond_lst):
         
         
     # PCA math 
-@st.cache
-def run_pca(dataframe): # PCA 
+    @st.cache
+    def run_pca(dataframe): # PCA 
     
             # turning 0's and negative numbers to 1's for log-transformation 
             
@@ -1185,7 +1187,7 @@ def run_pca(dataframe): # PCA
         
         
  # updates the datafraame and rep, cond, full_sample lists after removing a sample
-def update_df_cond_rep_sample_lst(replicate_lst, condition_lst, r_sample, dataframe): 
+    def update_df_cond_rep_sample_lst(replicate_lst, condition_lst, r_sample, dataframe): 
         
         '''
         For example, if we have two conditions, A and B, with 3 replicates each, cond lst = [A, B]
@@ -1250,7 +1252,7 @@ def update_df_cond_rep_sample_lst(replicate_lst, condition_lst, r_sample, datafr
     
     
 # function to plot the CoV of lipid species
-def plot_cov(X, cond_lst, rep_lst):  
+    def plot_cov(X, cond_lst, rep_lst):  
         
         auc = ['MeanArea[s'+str(i+1)+']' for i in range(sum(rep_lst))]
         
@@ -1308,11 +1310,7 @@ def plot_cov(X, cond_lst, rep_lst):
                     
                         X[auc]=X[auc].mask(X[auc]==1).fillna(0) # turning 1's back to 0's
                     
-                        #X.reset_index(inplace=True)
-                    
                         X.drop(['mean', 'cov'], axis=1, inplace=True)
-                        
-                        #X.set_index('Rej', inplace = True)
                         
                         filtered_data = st.checkbox('View Filtered Data')
                         
@@ -1347,7 +1345,7 @@ def plot_cov(X, cond_lst, rep_lst):
         
         
     # one CoV plot with hover tool
-def cov_hover(X, sample_lst):  
+    def cov_hover(X, sample_lst):  
             
         X['cov'] = X[['MeanArea['+sample+']' for sample in sample_lst]].apply(lambda x: cov_calculator(x), axis=1)
     
@@ -1390,8 +1388,8 @@ def cov_hover(X, sample_lst):
     
     
     # calculate CoV
-@st.cache
-def cov_calculator(numbers): 
+    @st.cache
+    def cov_calculator(numbers): 
     
         non_zero_lst = [number for number in numbers if (number>1)]
     
@@ -1410,8 +1408,8 @@ def cov_calculator(numbers):
     
     
  # calculate mean
-@st.cache
-def mean_calculator(numbers): 
+    @st.cache
+    def mean_calculator(numbers): 
     
         non_zero_lst = [number for number in numbers if (number>1)]
     
@@ -1432,7 +1430,7 @@ def mean_calculator(numbers):
     
     
 # function to to impute missing values and remove bad samples 
-def remove_bad_sample(X, rep_lst, cond_lst): 
+    def remove_bad_sample(X, rep_lst, cond_lst): 
             
             # removing bad samples
             
@@ -1499,7 +1497,7 @@ def remove_bad_sample(X, rep_lst, cond_lst):
         
         
 # function for imputing missing values 
-def impute_missing_value(X):
+    def impute_missing_value(X):
     
         full_sample_lst = ['s'+str(i+1) for i in range(sum(rep_lst))]
                 
@@ -1518,7 +1516,7 @@ def impute_missing_value(X):
 
 
     # function that creates all volcano plots
-def volcano_plot(X, cond_lst, rep_lst):
+    def volcano_plot(X, cond_lst, rep_lst):
     
         temp = X.copy()
     
@@ -1596,7 +1594,7 @@ def volcano_plot(X, cond_lst, rep_lst):
     
     
     # function that prepares a single volcano plot with hover tool 
-def volcano_hover(dataframe, selected_class, cond_1, cond_2):
+    def volcano_hover(dataframe, selected_class, cond_1, cond_2):
         
         unique_color_lst =[ 'red', 'blue', 'green', 'magenta', 'cyan', 'orange', 'black', 'pink', 'brown', 'yellow', 'purple', \
                             'gray', 'olive', 'chocolate', 'silver', 'darkred', 'khaki', 'skyblue', 'navy', 'orchid', 'deepskyblue', \
@@ -1660,8 +1658,8 @@ def volcano_hover(dataframe, selected_class, cond_1, cond_2):
     
     
     # calculate fold change 
-@st.cache
-def fc_calculator(num_1, num_2): 
+    @st.cache
+    def fc_calculator(num_1, num_2): 
         
         non_zero_num_1 = [num for num in num_1 if num > 0]
         
@@ -1681,8 +1679,8 @@ def fc_calculator(num_1, num_2):
     
     
     # calculate p-value by running a T-test 
-@st.cache
-def p_val_calculator(num_1, num_2):
+    @st.cache
+    def p_val_calculator(num_1, num_2):
         
         non_zero_num_1 = [num for num in num_1 if num > 0]
         
@@ -1703,7 +1701,7 @@ def p_val_calculator(num_1, num_2):
     
     
 # function to perform saturation level analysis 
-def saturation_level_plot(X, cond_lst, rep_lst):
+    def saturation_level_plot(X, cond_lst, rep_lst):
     
         temp = X.copy()
         
@@ -1737,8 +1735,8 @@ def saturation_level_plot(X, cond_lst, rep_lst):
     
     
     
-def saturation_level_plot_bar(dataframe, rep_lst_agg, cond_lst):
-    
+    def saturation_level_plot_bar(dataframe, rep_lst_agg, cond_lst):
+        
         for lipid_class in dataframe['ClassKey'].unique():
         
             sfa_lst = []
@@ -1856,7 +1854,7 @@ def saturation_level_plot_bar(dataframe, rep_lst_agg, cond_lst):
 
 
 
-def saturation_level_plot_stack(dataframe, rep_lst_agg, cond_lst):
+    def saturation_level_plot_stack(dataframe, rep_lst_agg, cond_lst):
     
         for lipid_class in dataframe['ClassKey'].unique():
             
@@ -1944,7 +1942,7 @@ def saturation_level_plot_stack(dataframe, rep_lst_agg, cond_lst):
 
 
 
-def saturation_level_plot_percentage(dataframe, rep_lst_agg, cond_lst):
+    def saturation_level_plot_percentage(dataframe, rep_lst_agg, cond_lst):
     
         for lipid_class in dataframe['ClassKey'].unique():
             
@@ -2035,8 +2033,8 @@ def saturation_level_plot_percentage(dataframe, rep_lst_agg, cond_lst):
     
     
     # function to calculate the ratio of sfa, mufa and pufa for each lipid species 
-@st.cache
-def calculate_FA_ratio(mol_structure):
+    @st.cache
+    def calculate_FA_ratio(mol_structure):
             
         a = mol_structure.split('(')
         
@@ -2099,8 +2097,8 @@ def calculate_FA_ratio(mol_structure):
     
     
  # function to calculate the abundance of sfa, mufa and pufa for each lipid species 
-@st.cache
-def calculate_SFA_MUFA_PUFA(dataframe, lipid_class, cond, sample_lst):
+    @st.cache
+    def calculate_SFA_MUFA_PUFA(dataframe, lipid_class, cond, sample_lst):
         
         dataframe = dataframe[dataframe['ClassKey'] == lipid_class]
         
@@ -2149,16 +2147,16 @@ def calculate_SFA_MUFA_PUFA(dataframe, lipid_class, cond, sample_lst):
 ##########################################################################################################################################
 # the main code of the app 
 
-st.header("LipidSearch 5.0 Module")
+    st.header("LipidSearch 5.0 Module")
 
-st.markdown("""
+    st.markdown("""
             
             The following module allows the user to run lipidomics analysis on LipidSearch 5.0 datasets. 
             Start by uploading your dataset and completing the next steps on the side bar.
             
             """)
             
-st.info("""
+    st.info("""
         
         A standard LipidSearch dataset must have the following columns:
             
@@ -2179,289 +2177,289 @@ st.info("""
         
         """)
 
-st.sidebar.subheader("Upload Data")
+    st.sidebar.subheader("Upload Data")
             
-lipid_search = st.sidebar.file_uploader(label='Upload your LipidSearch 5.0 dataset', type=['csv', 'txt'])
+    lipid_search = st.sidebar.file_uploader(label='Upload your LipidSearch 5.0 dataset', type=['csv', 'txt'])
             
-if lipid_search is not None:
+    if lipid_search is not None:
     
-    df = build_lipidsearch_df(lipid_search)
+        df = build_lipidsearch_df(lipid_search)
     
-    if df is not None:
+        if df is not None:
         
-        # building the side bar 
+            # building the side bar 
+        
+            confirm_data, name_df, filtered_conds, passing_abundance_grade, cond_lst, rep_lst = build_sidebar(df)
+                
+            # if user confirms the inputs:
     
-        confirm_data, name_df, filtered_conds, passing_abundance_grade, cond_lst, rep_lst = build_sidebar(df)
-            
-        # if user confirms the inputs:
-
-        if confirm_data:
-            
-            st.subheader("1) Data Cleaning, Exploration, Quality Check & Anomaly Detection")
-                    
-            st.markdown("""
-                                The Data Cleaning, Exploration, Quality Check & Anomaly Detection submodule allows the user to clean, filter
-                                and visualize the data, and runs anomaly detection tests on it.
+            if confirm_data:
                 
-                                """)
-        
-            st.subheader("1.1) Clean, Filter & Explore Data")
-        
-            expand_raw_data = st.expander("Raw Data")
-
-            with expand_raw_data:
-                
-                raw_data = st.checkbox('View Raw Data')
-                
-                if raw_data:
-    
-                    st.write(df)
-        
-                    csv_download = convert_df(df)
-                
-                    st.download_button(
-                    
-                        label="Download Data",
-                    
-                        data=csv_download,
-                    
-                        file_name='data.csv',
-                    
-                        mime='text/csv') 
-                    
-            expand_cleaned_data = st.expander("Cleaned Data")
-            
-            with expand_cleaned_data:
-                
+                st.subheader("1) Data Cleaning, Exploration, Quality Check & Anomaly Detection")
+                        
                 st.markdown("""
-                
-                The data cleaning process is a four steps process: 
+                                    The Data Cleaning, Exploration, Quality Check & Anomaly Detection submodule allows the user to clean, filter
+                                    and visualize the data, and runs anomaly detection tests on it.
                     
-                1) LipidCruncher deletes the datapoints that do not pass through the filters: 
-                    either their associated "Rej" value is TRUE or they have too many missing values.
-                
-                2) LipidCruncher only keeps the relevant columns.
-                
-                3) 'MeanArea' columns in the cleaned dataset are the aggregated version of those in the raw dataset.
-                    In the raw dataset, each lipid species appears as multiple datapoints. For each lipid species, LipidCruncher takes the "sum" 
-                    of AUC over all the corresponding datapoints. Therefore, in the cleaned dataset, each lipid species is represented by a single 
-                    datapoint. 
+                                    """)
+            
+                st.subheader("1.1) Clean, Filter & Explore Data")
+            
+                expand_raw_data = st.expander("Raw Data")
+    
+                with expand_raw_data:
                     
-                4) In the raw dataset, each lipid species appears as multiple datapoints. For each lipid species, LipidCruncher takes the "mean" 
-                    of the retention times over all the corresponding datapoints. Therefore, in the cleaned dataset, there is only one retention time 
-                    corresponding to each lipid species and that is the mean retention time. 
-                
-                """)
+                    raw_data = st.checkbox('View Raw Data')
+                    
+                    if raw_data:
         
-                X = clean_data(df, rep_lst, cond_lst, name_df, filtered_conds, passing_abundance_grade) # cleaned data 
-                
-            expand_filtered_data = st.expander("Filter Data Using BQC Samples")
-                
-            with expand_filtered_data:
-                
-                st.markdown(""" 
-                            
-                    Filtering mass spectrometry data is challenging. However, one reliable method to filter the data 
-                    is using "Batch Quality Control (BQC)" samples. Here is how BQC samples are created: take equal amount 
-                    of aliquot from each study sample and pool. Then, create multiple BQC samples by transferring the pooled 
-                    mixture to new tubes. If the pooled mixture is perfectly homogeneous, the BQC samples will be identical. Therefore, 
-                    there should not be any difference between the readings among all BQC samples. In reality, the pooled mixture is not 
-                    perfectly homogeneous, therefore a low variance in readings is expected. The vast majority of the lipid species 
-                    are expected to have a very
-                    low CoV (i.e. CoV < 30%). The coefficient of variation (CoV) is defined as the ratio of the standard deviation to the mean.
-                    It shows the extent of variability in relation to the mean of the population and is often expressed as a percentage.
-                    The red line in the CoV plot is the line of "30% CoV".
+                        st.write(df)
+            
+                        csv_download = convert_df(df)
                     
-                    When a datapoint (i.e. a lipid species) has a low CoV (i.e. consistent readings among all BQC samples), that datapoint is highly reliable.
-                    However, when a datapoint has a high CoV (i.e. inconsistent readings among BQC samples), that datapoint is less reliable. 
-                    The high CoV is either the result of the inhomogeneity of the pooled mixture (i.e. valid datapoint) or the error of the instrument
-                    and/or the lipid identification software (i.e. invalid datapoint). Not doing any filtering comes with the risk of accepting some 
-                    invalid datapoints and filtering comes with the risk of rejecting some valid datapoints. It seems reasonable to have the option to run
-                    the analysis with and without BQC filtering and compare the results.   
-                    
-                    Here is how LipidCruncher filters the data using BQC samples: lipid species with CoV lower than a set threshold (e.g. 30%) are kept
-                    and the rest are removed. 
+                        st.download_button(
+                        
+                            label="Download Data",
+                        
+                            data=csv_download,
+                        
+                            file_name='data.csv',
+                        
+                            mime='text/csv') 
+                        
+                expand_cleaned_data = st.expander("Cleaned Data")
                 
+                with expand_cleaned_data:
+                    
+                    st.markdown("""
+                    
+                    The data cleaning process is a four steps process: 
+                        
+                    1) LipidCruncher deletes the datapoints that do not pass through the filters: 
+                        either their associated "Rej" value is TRUE or they have too many missing values.
+                    
+                    2) LipidCruncher only keeps the relevant columns.
+                    
+                    3) 'MeanArea' columns in the cleaned dataset are the aggregated version of those in the raw dataset.
+                        In the raw dataset, each lipid species appears as multiple datapoints. For each lipid species, LipidCruncher takes the "sum" 
+                        of AUC over all the corresponding datapoints. Therefore, in the cleaned dataset, each lipid species is represented by a single 
+                        datapoint. 
+                        
+                    4) In the raw dataset, each lipid species appears as multiple datapoints. For each lipid species, LipidCruncher takes the "mean" 
+                        of the retention times over all the corresponding datapoints. Therefore, in the cleaned dataset, there is only one retention time 
+                        corresponding to each lipid species and that is the mean retention time. 
+                    
                     """)
+            
+                    X = clean_data(df, rep_lst, cond_lst, name_df, filtered_conds, passing_abundance_grade) # cleaned data 
                     
-                st.info("""
+                expand_filtered_data = st.expander("Filter Data Using BQC Samples")
+                    
+                with expand_filtered_data:
+                    
+                    st.markdown(""" 
+                                
+                        Filtering mass spectrometry data is challenging. However, one reliable method to filter the data 
+                        is using "Batch Quality Control (BQC)" samples. Here is how BQC samples are created: take equal amount 
+                        of aliquot from each study sample and pool. Then, create multiple BQC samples by transferring the pooled 
+                        mixture to new tubes. If the pooled mixture is perfectly homogeneous, the BQC samples will be identical. Therefore, 
+                        there should not be any difference between the readings among all BQC samples. In reality, the pooled mixture is not 
+                        perfectly homogeneous, therefore a low variance in readings is expected. The vast majority of the lipid species 
+                        are expected to have a very
+                        low CoV (i.e. CoV < 30%). The coefficient of variation (CoV) is defined as the ratio of the standard deviation to the mean.
+                        It shows the extent of variability in relation to the mean of the population and is often expressed as a percentage.
+                        The red line in the CoV plot is the line of "30% CoV".
                         
-                        Creating BQC samples in any lipidomics experiment is a great practice:
+                        When a datapoint (i.e. a lipid species) has a low CoV (i.e. consistent readings among all BQC samples), that datapoint is highly reliable.
+                        However, when a datapoint has a high CoV (i.e. inconsistent readings among BQC samples), that datapoint is less reliable. 
+                        The high CoV is either the result of the inhomogeneity of the pooled mixture (i.e. valid datapoint) or the error of the instrument
+                        and/or the lipid identification software (i.e. invalid datapoint). Not doing any filtering comes with the risk of accepting some 
+                        invalid datapoints and filtering comes with the risk of rejecting some valid datapoints. It seems reasonable to have the option to run
+                        the analysis with and without BQC filtering and compare the results.   
+                        
+                        Here is how LipidCruncher filters the data using BQC samples: lipid species with CoV lower than a set threshold (e.g. 30%) are kept
+                        and the rest are removed. 
+                    
+                        """)
+                        
+                    st.info("""
                             
-                        1) The vast majority of the lipid species living in BQC samples are expected to have a low CoV. 
-                           Confirming the above statement is a great check for the overall quality of the dataset. 
+                            Creating BQC samples in any lipidomics experiment is a great practice:
+                                
+                            1) The vast majority of the lipid species living in BQC samples are expected to have a low CoV. 
+                               Confirming the above statement is a great check for the overall quality of the dataset. 
+                            
+                            2) BQC samples provide a mechanism to separate datapoints with a very high reliablity from the ones that are less reliable. 
+                            
+                            """)
+                    
+                    X = plot_cov(X, cond_lst, rep_lst)
+                    
+                expand_hist = st.expander("View Distributions of AUC: Scan Data & Detect Atypical Patterns")
+                
+                with expand_hist:
+                    
+                    st.markdown("""
+    
+                        In a standard LipidSearch dataset, columns "MeanArea[s1]" to "MeanArea[sN]" correspond to Area 
+                        Under the Curve (AUC) representing the relative abundance of the lipid species 
+                        in samples s1 to sN. 
                         
-                        2) BQC samples provide a mechanism to separate datapoints with a very high reliablity from the ones that are less reliable. 
+                        To plot the histograms of AUC, LipidCruncher turns all 0 values (i.e. missing values) to 1 
+                        and then log-transforms the whole dataset. This allows the user to visualize what portion of the 
+                        values are missing without affecting the distribution (as 1 is orders of magnitude smaller than 
+                        the minimum detection threshold by mass spectrometry).
                         
+                        Visualize the distribution of AUC's in any of the replicates and look for atypical patterns (e.g. too many missing values):
+    
                         """)
                 
-                X = plot_cov(X, cond_lst, rep_lst)
+                    plot_hist(X, rep_lst, cond_lst) # histograms of AUC
+                    
+                expand_retention = st.expander('View Retention Time Plots: Check Sanity of Data')
                 
-            expand_hist = st.expander("View Distributions of AUC: Scan Data & Detect Atypical Patterns")
-            
-            with expand_hist:
-                
-                st.markdown("""
-
-                    In a standard LipidSearch dataset, columns "MeanArea[s1]" to "MeanArea[sN]" correspond to Area 
-                    Under the Curve (AUC) representing the relative abundance of the lipid species 
-                    in samples s1 to sN. 
+                with expand_retention:
                     
-                    To plot the histograms of AUC, LipidCruncher turns all 0 values (i.e. missing values) to 1 
-                    and then log-transforms the whole dataset. This allows the user to visualize what portion of the 
-                    values are missing without affecting the distribution (as 1 is orders of magnitude smaller than 
-                    the minimum detection threshold by mass spectrometry).
-                    
-                    Visualize the distribution of AUC's in any of the replicates and look for atypical patterns (e.g. too many missing values):
-
-                    """)
-            
-                plot_hist(X, rep_lst, cond_lst) # histograms of AUC
-                
-            expand_retention = st.expander('View Retention Time Plots: Check Sanity of Data')
-            
-            with expand_retention:
-                
-                st.markdown("""
-                    
-                    The retention time of a lipid species is a function of its degree of hydrophobicity. 
-                    The more hydrophobic the lipid species, the longer the retention time. When retention time is 
-                    plotted versus molecular mass, lipid species tend to form separate clusters based upon which lipid class they belong to.
-                    
-                    Inspect the retention time of lipid species within any lipid class and compare with other lipid classes. 
-                    Does everything make sense?
-                    
-                    """) 
-        
-                plot_retention(X, cond_lst, rep_lst) # retention time plots
-                
-            st.subheader("1.2) Detect Anomalies")
-        
-            expand_corr = st.expander('Pairwise Correlation Analysis') 
-            
-            with expand_corr:
-                
-                st.markdown("""
-                    
-                    Typically, the AUC's of any sample is highly linearly correlated to those of its biological replicate
-                    (i.e. correlation coefficient > 0.8). This linear correlation is expected to be even stronger for technical replicates 
-                    (i.e. correlation coefficient > 0.9).
-                    A sample that has a weak correlation with its biological replicates is an outlier. That sample might be an outlier because 
-                    of the natural biological variance or an error during sample preparation.
-                    
-                    Run a correlation test to inspect the degree of correlation between any two biological or technical replicates:
-                    
-                    """)
-                    
-                st.info("LipidCruncher removes the missing values before preforming the correlation test.")
-        
-                plot_corr(X, cond_lst, rep_lst) # pairwise correlation plots 
-                
-            expand_pca = st.expander('Principal Component Analysis (PCA)')
-        
-            with expand_pca:
-            
-                st.markdown("""
-                    
-                    Principal Component Analysis, or PCA, is a dimensionality-reduction method that is often used to reduce the 
-                    dimensionality of large data sets, by transforming a large set of variables into a smaller one that still contains 
-                    most of the information in the large set.
-                    
-                    Typically, biological replicates are expected to cluster together with the exception of rare outliers that fall 
-                    further away from the rest of the replicates. 
-                    
-                    A plot of the top two principal components (PC1 and PC2) against each other is the best way to inspect the clustering 
-                    of different samples. This is because the PC's are ordered based on how much of the variability in the data 
-                    they can explain (i.e. PC1 is the PC with the highest variance explained ratio, PC2 is the PC with the second highest 
-                    variance expalined ratio and so on).
-                    
-                    Run PCA to inspect the clustering of different samples:
-                    
-                    """)
-                    
-                st.info("LipidCruncher does NOT remove missing values before performng PCA analysis.")
-
-                plot_pca(X, rep_lst, cond_lst) # PCA analysis
-                
-            st.subheader("2) Data Analysis & Hypothesis Testing")
-            
-            st.markdown("""
-                                The Data Analysis & Hypothesis Testing submodule allows the user to run statistical analysis on 
-                                the data and test their hypothesis. 
-                
-                                """)
-                                
-            st.subheader("2.1) Remove Anomalies")
-        
-            expand_cleaned_data = st.expander("Remove Anomalies (and/or Blank Samples)")
-            
-            with expand_cleaned_data:
-
-                X, rep_lst, cond_lst = remove_bad_sample(X, rep_lst, cond_lst) # cleaned data
-                
-            st.subheader("2.2) Analyze Data")
-                
-            expand_vol_plot = st.expander("Volcano Plots - Test Hypothesis")
-            
-            with expand_vol_plot:
-                
-                st.markdown("""
-                            
-                            In statistics, a volcano plot is a type of scatter-plot that is used to quickly identify changes in \
-                            large data sets composed of replicate data. It plots significance versus fold-change on the y and x axes, respectively. \
-                            A volcano plot combines a measure of statistical significance from a statistical test (e.g., a p value from a T-test) \
-                            with the magnitude of the change, enabling quick visual identification of those data-points that display large magnitude\
-                            changes that are also statistically significant (datapoints at the top left and top right quadrant).
-                            
-                            Below, q-value (i.e. -log10(p-value)) of each lipid species is plotted versus the fold change of that species. \
-                            The p-value is computed from a two-sample T-test and the fold change is computed from the following formula:
-                            
-                            """)
-                    
-                latext = r'''
+                    st.markdown("""
                         
-                $$ 
-                Fold Change = log2(\frac{Mean AUC(Condition 1)}{Mean AUC(Condition 2)})
-                $$  
-                
-                '''
-                
-                st.write(latext)
-                
-                st.info("The outcome of a T-test is most accurate when both samples that are being compared have the same size (i.e. \
-                        equal number of datapoints). Therefore, to create a volcano plot, the best practice is to impute missing values.")
+                        The retention time of a lipid species is a function of its degree of hydrophobicity. 
+                        The more hydrophobic the lipid species, the longer the retention time. When retention time is 
+                        plotted versus molecular mass, lipid species tend to form separate clusters based upon which lipid class they belong to.
+                        
+                        Inspect the retention time of lipid species within any lipid class and compare with other lipid classes. 
+                        Does everything make sense?
+                        
+                        """) 
+            
+                    plot_retention(X, cond_lst, rep_lst) # retention time plots
                     
-                st.warning("Your choice here only affects the volcano plot, not the rest of the submodule.")
+                st.subheader("1.2) Detect Anomalies")
             
-                volcano_plot(X, cond_lst, rep_lst)
+                expand_corr = st.expander('Pairwise Correlation Analysis') 
                 
-            expand_sat_plot = st.expander("Saturation Level Plots - Investigate Saturation Level of Different Lipid Classes")
+                with expand_corr:
+                    
+                    st.markdown("""
+                        
+                        Typically, the AUC's of any sample is highly linearly correlated to those of its biological replicate
+                        (i.e. correlation coefficient > 0.8). This linear correlation is expected to be even stronger for technical replicates 
+                        (i.e. correlation coefficient > 0.9).
+                        A sample that has a weak correlation with its biological replicates is an outlier. That sample might be an outlier because 
+                        of the natural biological variance or an error during sample preparation.
+                        
+                        Run a correlation test to inspect the degree of correlation between any two biological or technical replicates:
+                        
+                        """)
+                        
+                    st.info("LipidCruncher removes the missing values before preforming the correlation test.")
             
-            with expand_sat_plot:
+                    plot_corr(X, cond_lst, rep_lst) # pairwise correlation plots 
+                    
+                expand_pca = st.expander('Principal Component Analysis (PCA)')
+            
+                with expand_pca:
+                
+                    st.markdown("""
+                        
+                        Principal Component Analysis, or PCA, is a dimensionality-reduction method that is often used to reduce the 
+                        dimensionality of large data sets, by transforming a large set of variables into a smaller one that still contains 
+                        most of the information in the large set.
+                        
+                        Typically, biological replicates are expected to cluster together with the exception of rare outliers that fall 
+                        further away from the rest of the replicates. 
+                        
+                        A plot of the top two principal components (PC1 and PC2) against each other is the best way to inspect the clustering 
+                        of different samples. This is because the PC's are ordered based on how much of the variability in the data 
+                        they can explain (i.e. PC1 is the PC with the highest variance explained ratio, PC2 is the PC with the second highest 
+                        variance expalined ratio and so on).
+                        
+                        Run PCA to inspect the clustering of different samples:
+                        
+                        """)
+                        
+                    st.info("LipidCruncher does NOT remove missing values before performng PCA analysis.")
+    
+                    plot_pca(X, rep_lst, cond_lst) # PCA analysis
+                    
+                st.subheader("2) Data Analysis & Hypothesis Testing")
                 
                 st.markdown("""
-                            
-                            Saturation level plots show the saturation profile of each lipid class. 
-                            First, for each lipid species, the ratio of Saturated Fatty Acids (SFA), Mono Unsaturated \
-                            Fatty Acids (MUFA) and Poly Unsaturated Fatty Acids (PUFA) is calculated as following:
-                                
-                            SFA ratio = total number of saturated fatty acids / total number of fatty acids
-                            
-                            MUFA ratio = total number of mono unsaturated fatty acids / total number of fatty acids
-                            
-                            PUFA ratio = total number of poly unsaturated fatty acids / total number of fatty acids
-                            
-                            Then, for each lipid species, the abundance of SFA, MUFA and PUFA is calculated as following:
-                                
-                            AUC(SFA) = (AUC averaged over all replicates).(SFA ratio)
-                            
-                            AUC(MUFA) = (AUC averaged over all replicates).(MUFA ratio)
-                            
-                            AUC(PUFA) = (AUC averaged over all replicates).(PUFA ratio)
-                            
-                            Finally, total AUC(SFA), AUC(MUFA) and AUC(PUFA) for each lipid class is calculated by taking the sum of \
-                            AUC(SFA), AUC(MUFA) and AUC(PUFA) over all lipid species that belong to that class. 
-                            
-                            """)
+                                    The Data Analysis & Hypothesis Testing submodule allows the user to run statistical analysis on 
+                                    the data and test their hypothesis. 
+                    
+                                    """)
+                                    
+                st.subheader("2.1) Remove Anomalies")
+            
+                expand_cleaned_data = st.expander("Remove Anomalies (and/or Blank Samples)")
                 
-                saturation_level_plot(X, cond_lst, rep_lst)
+                with expand_cleaned_data:
+    
+                    X, rep_lst, cond_lst = remove_bad_sample(X, rep_lst, cond_lst) # cleaned data
+                    
+                st.subheader("2.2) Analyze Data")
+                    
+                expand_vol_plot = st.expander("Volcano Plots - Test Hypothesis")
+                
+                with expand_vol_plot:
+                    
+                    st.markdown("""
+                                
+                                In statistics, a volcano plot is a type of scatter-plot that is used to quickly identify changes in \
+                                large data sets composed of replicate data. It plots significance versus fold-change on the y and x axes, respectively. \
+                                A volcano plot combines a measure of statistical significance from a statistical test (e.g., a p value from a T-test) \
+                                with the magnitude of the change, enabling quick visual identification of those data-points that display large magnitude\
+                                changes that are also statistically significant (datapoints at the top left and top right quadrant).
+                                
+                                Below, q-value (i.e. -log10(p-value)) of each lipid species is plotted versus the fold change of that species. \
+                                The p-value is computed from a two-sample T-test and the fold change is computed from the following formula:
+                                
+                                """)
+                        
+                    latext = r'''
+                            
+                    $$ 
+                    Fold Change = log2(\frac{Mean AUC(Condition 1)}{Mean AUC(Condition 2)})
+                    $$  
+                    
+                    '''
+                    
+                    st.write(latext)
+                    
+                    st.info("The outcome of a T-test is most accurate when both samples that are being compared have the same size (i.e. \
+                            equal number of datapoints). Therefore, to create a volcano plot, the best practice is to impute missing values.")
+                        
+                    st.warning("Your choice here only affects the volcano plot, not the rest of the submodule.")
+                
+                    volcano_plot(X, cond_lst, rep_lst)
+                    
+                expand_sat_plot = st.expander("Saturation Level Plots - Investigate Saturation Level of Different Lipid Classes")
+                
+                with expand_sat_plot:
+                    
+                    st.markdown("""
+                                
+                                Saturation level plots show the saturation profile of each lipid class. 
+                                First, for each lipid species, the ratio of Saturated Fatty Acids (SFA), Mono Unsaturated \
+                                Fatty Acids (MUFA) and Poly Unsaturated Fatty Acids (PUFA) is calculated as following:
+                                    
+                                SFA ratio = total number of saturated fatty acids / total number of fatty acids
+                                
+                                MUFA ratio = total number of mono unsaturated fatty acids / total number of fatty acids
+                                
+                                PUFA ratio = total number of poly unsaturated fatty acids / total number of fatty acids
+                                
+                                Then, for each lipid species, the abundance of SFA, MUFA and PUFA is calculated as following:
+                                    
+                                AUC(SFA) = (AUC averaged over all replicates).(SFA ratio)
+                                
+                                AUC(MUFA) = (AUC averaged over all replicates).(MUFA ratio)
+                                
+                                AUC(PUFA) = (AUC averaged over all replicates).(PUFA ratio)
+                                
+                                Finally, total AUC(SFA), AUC(MUFA) and AUC(PUFA) for each lipid class is calculated by taking the sum of \
+                                AUC(SFA), AUC(MUFA) and AUC(PUFA) over all lipid species that belong to that class. 
+                                
+                                """)
+                    
+                    saturation_level_plot(X, cond_lst, rep_lst)
