@@ -28,7 +28,7 @@ def app():
                 
                 cols = df.columns.values.tolist()
                 
-                if ('Rej' in cols) and ('LipidMolec' in cols) and ('ClassKey' in cols) and ('FAKey' in cols) and ('CalcMass in cols') and ('BaseRt' in cols):
+                if ('LipidMolec' in cols) and ('ClassKey' in cols) and ('FAKey' in cols) and ('CalcMass in cols') and ('BaseRt' in cols):
                 
                     return df
                 
@@ -44,7 +44,7 @@ def app():
                 
                 cols = df.columns.values.tolist()
                 
-                if ('Rej' in cols) and ('LipidMolec' in cols) and ('ClassKey' in cols) and ('FAKey' in cols) and ('CalcMass in cols') and ('BaseRt' in cols):
+                if ('LipidMolec' in cols) and ('ClassKey' in cols) and ('FAKey' in cols) and ('CalcMass in cols') and ('BaseRt' in cols):
                     
                     return df
                 
@@ -398,7 +398,7 @@ def app():
     
     @st.cache
     def build_main_area_col_lst(df):
-    
+        
         main_area_col_lst = []
          
         for col in df.columns:
@@ -453,10 +453,11 @@ def app():
 # function to apply filters to the data
     def clean_data(df, rep_lst, cond_lst, name_df, filtered_conds, passing_abundance_grade): 
     
-            temp = df[['Rej','LipidMolec', 'ClassKey', 'FAKey', 'CalcMass', 'BaseRt'] + ['MeanArea[' + sample + ']' for sample in name_df['old name']]]
-        
+            temp = df[['LipidMolec', 'ClassKey', 'FAKey', 'CalcMass', 'BaseRt', 'TotalGrade'] + ['MeanArea[' + sample + ']' for sample in name_df['old name']]]
+            
             #first filter
-            temp = temp.loc[temp['Rej'] == False] # removes the datapoint if 'Rej' = TRUE
+            
+            temp = temp[temp['TotalGrade'].isin(['A', 'B'])]
              
             # updating the column names
             
@@ -476,9 +477,7 @@ def app():
             
             X = pd.merge(X1, X2, on='LipidMolec')
             
-            X['Rej'] = False
-            
-            X = X[['Rej','LipidMolec', 'ClassKey', 'FAKey', 'CalcMass', 'BaseRt'] + ['MeanArea[s' + str(i+1) + ']' for i in range(total_reps)]]
+            X = X[['LipidMolec', 'ClassKey', 'FAKey', 'CalcMass', 'BaseRt'] + ['MeanArea[s' + str(i+1) + ']' for i in range(total_reps)]]
             
             #third filter: minimum abundance grade 
         
@@ -533,7 +532,7 @@ def app():
         
     @st.cache
     def build_agg_df(dataframe, total_reps):
-    
+        
         X1 = dataframe.groupby(["LipidMolec", 'ClassKey', 'FAKey'])[["MeanArea[s" + str(i+1) + ']' for i in range(total_reps)]].sum()
         
         X1.reset_index(inplace = True)
@@ -551,18 +550,18 @@ def app():
 # function to log transform the abundance columns of the df
     @st.cache
     def log_transform_df(X, rep_lst):  
-    
-        temp = X.copy()
         
-        auc = ['MeanArea[s'+str(i+1)+']' for i in range(sum(rep_lst))]
-        
-        # filling zero values with 1's to avoid infinity
-        
-        temp[auc]=temp[auc].mask(temp[auc]<=1).fillna(1)
-        
-        temp[auc] = temp[auc].apply(lambda x: np.log10(x), axis=0)
-        
-        return temp
+            temp = X.copy()
+            
+            auc = ['MeanArea[s'+str(i+1)+']' for i in range(sum(rep_lst))]
+            
+            # filling zero values with 1's to avoid infinity
+            
+            temp[auc]=temp[auc].mask(temp[auc]<=1).fillna(1)
+            
+            temp[auc] = temp[auc].apply(lambda x: np.log10(x), axis=0)
+            
+            return temp
 
 
 
@@ -597,27 +596,27 @@ def app():
  #function that computes the total abundance grade for each lipid species
     @st.cache
     def abundance_level_calculator(intensities, passing_abundance_grade): 
-        
-        '''
-        For example: if the passing abundance grade is 3, and condition A has a at least 3 non-zero values, 
-        the function returns 1, otherwise it returns 0.
-        '''
-        
-        counter = 0
-                    
-        for intensity in intensities:
+            
+            '''
+            For example: if the passing abundance grade is 3, and condition A has a at least 3 non-zero values, 
+            the function returns 1, otherwise it returns 0.
+            '''
+            
+            counter = 0
                         
-            if float(intensity) > 0:
+            for intensity in intensities:
                             
-                counter = counter+1
+                if float(intensity) > 0:
+                                
+                    counter = counter+1
+                                
+            if counter >= passing_abundance_grade:
                             
-        if counter >= passing_abundance_grade:
+                return 1  
                         
-            return 1  
-                    
-        else:
-                        
-            return 0
+            else:
+                            
+                return 0
         
         
         
@@ -1736,7 +1735,7 @@ def app():
     
     
     def saturation_level_plot_bar(dataframe, rep_lst_agg, cond_lst):
-        
+    
         for lipid_class in dataframe['ClassKey'].unique():
         
             sfa_lst = []
@@ -2159,8 +2158,6 @@ def app():
     st.info("""
         
         A standard LipidSearch dataset must have the following columns:
-            
-        Rej: one of the built-in filtering mechanisms of LipidSearch which either takes FALSE (i.e. accepted) or TRUE (i.e. rejected)
 
         LipidMolec: the class that the lipid species belong to and its number of carbon atoms and double bonds
 
@@ -2182,11 +2179,11 @@ def app():
     lipid_search = st.sidebar.file_uploader(label='Upload your LipidSearch 5.0 dataset', type=['csv', 'txt'])
             
     if lipid_search is not None:
-    
-        df = build_lipidsearch_df(lipid_search)
-    
-        if df is not None:
         
+        df = build_lipidsearch_df(lipid_search)
+        
+        if df is not None:
+            
             # building the side bar 
         
             confirm_data, name_df, filtered_conds, passing_abundance_grade, cond_lst, rep_lst = build_sidebar(df)
@@ -2236,7 +2233,7 @@ def app():
                     The data cleaning process is a four steps process: 
                         
                     1) LipidCruncher deletes the datapoints that do not pass through the filters: 
-                        either their associated "Rej" value is TRUE or they have too many missing values.
+                        either their associated "Total Grade" value is "C" or "D", or they have too many missing values.
                     
                     2) LipidCruncher only keeps the relevant columns.
                     
