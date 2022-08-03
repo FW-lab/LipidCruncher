@@ -10,6 +10,7 @@ from sklearn.preprocessing import scale # Data scaling
 from sklearn import decomposition # PCA
 from scipy import stats
 from bokeh.transform import dodge
+import math
 
 def app():
 
@@ -2142,6 +2143,367 @@ def app():
         pufa_var = dataframe['PUFA_var'].sum()
         
         return sfa, mufa, pufa, sfa_var, mufa_var, pufa_var
+    
+    
+    
+    
+    
+    def plot_pathway(X, cond_lst, rep_lst):
+    
+        pathway_viz = st.checkbox("Visualize Lipidomic Pathways")
+        
+        if pathway_viz:
+        
+            temp = X.copy()
+            
+            control = st.selectbox('Select the control group', cond_lst)
+            
+            experimental = st.selectbox('Select the group you would like to compare with the control group (experimental group)', cond_lst)
+            
+            # ratio_lst: list of abundance ratio between any pair of classes 
+            
+            class_lst, ratio_lst = calculate_class_fold_change(X, cond_lst, rep_lst, control, experimental)
+            
+            temp['saturation_comb'] = temp['LipidMolec'].apply(lambda x: calculate_saturated_unsaturated_chain_number(x))
+            
+            # what percentage of chains are saturated 
+            
+            sat_ratio_lst = calculate_saturation_ratio(temp, class_lst)
+            
+            plt.rcParams["figure.figsize"] = [10, 10]
+        
+            fig, ax = plt.subplots()
+        
+            ax.set_title('Lipid Pathway Visualization', fontsize=20)
+        
+            ax.set_xlim([-25, 25])
+            ax.set_ylim([-20, 30])
+        
+            ax.axes.xaxis.set_visible(False)
+            ax.axes.yaxis.set_visible(False)
+        
+            plt.gca().set_aspect('equal', adjustable='box')
+            
+            ax.add_patch(draw_circle(5, 0, 0, 'b'))
+            ax.add_patch(draw_circle(2.5, -7.5 * math.cos(math.pi/6), -7.5 * math.cos(math.pi/3), 'b'))
+            ax.add_patch(draw_circle(2.5, 7.5 * math.cos(math.pi/6), -7.5 * math.cos(math.pi/3), 'b'))
+            ax.add_patch(draw_circle(2.5, 10 + 2.5 * math.cos(math.pi/4), 15 + 2.5 * math.sin(math.pi/4), 'b'))
+            ax.add_patch(draw_circle(2.5, 12.5, 10, 'b'))
+            ax.add_patch(draw_circle(2.5, 10 + 2.5 * math.cos(math.pi/4), 5 - 2.5 * math.sin(math.pi/4), 'b'))
+        
+            ax.plot([0, 0], [0, 20], c='b')
+            ax.plot([0, -5], [15, 20], c='b')
+            ax.plot([-5, -10], [20, 15], c='b')
+            ax.plot([-10, -10], [15, 5], c='b')
+            ax.plot([0, 5], [10, 10], c='b')
+            ax.plot([5, 10], [10, 15], c='b')
+            ax.plot([5, 10], [10, 10], c='b')
+            ax.plot([5, 10], [10, 5], c='b')
+            ax.plot([5*math.cos(math.pi/6), 10], [-5*math.sin(math.pi/6), 5], c='b')
+            
+            ax.annotate('G3P', xy=(0, 20), xytext=(0, 23),arrowprops=dict(facecolor='black'), fontsize=15)
+            ax.annotate('Fatty Acids', xy=(-5, 20), xytext=(-5, 25),arrowprops=dict(facecolor='black'), fontsize=15)
+            
+            ax.text(-3.5, 14, 'LPA', fontsize=15)
+            ax.text(-2.5, 9.5, 'PA', fontsize=15)
+            ax.text(-4, 5.5, 'DAG', fontsize=15)
+            ax.text(-4, 0.5, 'TAG', fontsize=15)
+            ax.text(-4, -2, 'PC', fontsize=15)
+            ax.text(-12, -6.5, 'LPC', fontsize=15)
+            ax.text(2.5, -2, 'PE', fontsize=15)
+            ax.text(9, -6, 'LPE', fontsize=15)
+            ax.text(-14, 15, 'LCBs', fontsize=15)
+            ax.text(-13.5, 10, 'Cer', fontsize=15)
+            ax.text(-13, 5, 'SM', fontsize=15)
+            ax.text(2, 11, 'CDP-DAG', fontsize=15)
+            ax.text(10.5, 15.5, 'PI', fontsize=15)
+            ax.text(14, 19, 'LPI', fontsize=15)
+            ax.text(10.5, 9.5, 'PG', fontsize=15)
+            ax.text(15.5, 9.5, 'LPG', fontsize=15)
+            ax.text(10.5, 4, 'PS', fontsize=15)
+            ax.text(14.5, 1, 'LPS', fontsize=15)
+            
+            pathway_class_lst = ['TG', 'DG', 'PA', 'LPA', 'LCB', 'Cer', 'SM', 'PE', 'LPE', 'PC', 'LPC', 'PI', 'LPI', 'CDP-DAG', \
+                                     'PG', 'LPG', 'PS', 'LPS']
+                
+            pathway_ratio_lst = [0] * len(pathway_class_lst)
+            
+            pathway_sat_ratio_lst = [0] * len(pathway_class_lst)
+            
+            i = 0
+            
+            for lipid_class in pathway_class_lst:
+                
+                if lipid_class in class_lst:
+                    
+                    class_index = class_lst.index(lipid_class)
+                    
+                    pathway_ratio_lst[i] = ratio_lst[class_index]
+                    
+                    pathway_sat_ratio_lst[i] = sat_ratio_lst[class_index]
+                
+                i += 1
+                
+            pathway_dict = {'class': pathway_class_lst, 'abundance ratio': pathway_ratio_lst, \
+                            'saturated fatty acids ratio': pathway_sat_ratio_lst}
+                    
+            pathway_ratio_lst = [50*ele**2 for ele in pathway_ratio_lst]
+            
+            color_contour = pathway_sat_ratio_lst
+            size = pathway_ratio_lst
+            
+            points_x = [0, 0, 0, 0, -10, -10, -10, 5*math.cos(math.pi/6), 10*math.cos(math.pi/6), \
+                        -5*math.cos(math.pi/6), -10*math.cos(math.pi/6), 10, 10+5*math.cos(math.pi/4), \
+                        5, 10, 15, 10, 10+5*math.cos(math.pi/4)]
+            points_y = [0, 5, 10, 15, 15, 10, 5, -5*math.sin(math.pi/6), -10*math.sin(math.pi/6), \
+                        -5*math.sin(math.pi/6), -10*math.sin(math.pi/6), 15, 15+5*math.sin(math.pi/4), \
+                        10, 10, 10, 5, 5-5*math.sin(math.pi/4)]
+            
+            ax.add_patch(draw_circle(0.5, 0, 0, 'black'))
+            ax.add_patch(draw_circle(0.5, 0, 5, 'black'))
+            ax.add_patch(draw_circle(0.5, 0, 10, 'black'))
+            ax.add_patch(draw_circle(0.5, -10, 10, 'black'))
+            ax.add_patch(draw_circle(0.5, -10, 5, 'black'))
+            ax.add_patch(draw_circle(0.5, 5*math.cos(math.pi/6), -5*math.sin(math.pi/6), 'black'))
+            ax.add_patch(draw_circle(0.5, 10*math.cos(math.pi/6), -10*math.sin(math.pi/6), 'black'))
+            ax.add_patch(draw_circle(0.5, -5*math.cos(math.pi/6), -5*math.sin(math.pi/6), 'black'))
+            ax.add_patch(draw_circle(0.5, -10*math.cos(math.pi/6), -10*math.sin(math.pi/6), 'black'))
+            ax.add_patch(draw_circle(0.5, 10, 15, 'black'))
+            ax.add_patch(draw_circle(0.5, 10+5*math.cos(math.pi/4), 15+5*math.sin(math.pi/4), 'black'))
+            ax.add_patch(draw_circle(0.5, 10, 10, 'black'))
+            ax.add_patch(draw_circle(0.5, 15, 10, 'black'))
+            ax.add_patch(draw_circle(0.5, 10, 5, 'black'))
+            ax.add_patch(draw_circle(0.5, 10+5*math.cos(math.pi/4), 5-5*math.sin(math.pi/4), 'black'))
+        
+            points = ax.scatter(points_x, points_y, c=color_contour, s=size, cmap="plasma")
+            
+            cbar = fig.colorbar(points)
+            
+            cbar.set_label(label='Unsaturated <--- Saturatted Fatty Acids Ratio ---> Saturated', size=15)
+            
+            cbar.ax.tick_params(labelsize=15)
+            
+            st.pyplot(fig)
+                
+            pathway_df = pd.DataFrame.from_dict(pathway_dict)
+            
+            pathway_df.set_index('class', inplace=True)
+            
+            st.write(pathway_df)
+            
+            csv_download = convert_df(pathway_df)
+                        
+            st.download_button(
+                            label="Download Data",
+                            
+                            data=csv_download,
+                            
+                            file_name='pathway_viz.csv',
+                            
+                            mime='text/csv')
+        
+        return 
+
+
+
+
+
+    def draw_circle(radius, x0, y0, color):
+    
+        return plt.Circle((x0, y0), radius, color = color, fill = False)
+
+
+
+
+
+    def calculate_class_fold_change(X, cond_lst, rep_lst, control, experimental):
+    
+        temp = X.copy()
+        
+        total_reps = sum(rep_lst)
+        
+        rep_lst_agg = build_rep_lst_agg(rep_lst)
+        
+        group_temp = temp.groupby('ClassKey')[["MeanArea[s" + str(i+1) + ']' for i in range(total_reps)]].sum()
+        
+        control_index = cond_lst.index(control)
+        
+        experimental_index = cond_lst.index(experimental)
+        
+        class_lst = group_temp.index.tolist()
+        
+        ratio_lst = [0] * len(class_lst)
+        
+        i = 0
+        
+        for lipid_class in group_temp.index:
+            
+            if control_index == 0:
+        
+                denom = np.mean(group_temp.iloc[i][: rep_lst_agg[0]])
+                
+            else:
+                
+                denom = np.mean(group_temp.iloc[i][rep_lst_agg[control_index - 1] : rep_lst_agg[control_index]])
+                
+            if experimental_index == 0:
+                
+                nume = np.mean(group_temp.iloc[i][: rep_lst_agg[0]])
+                
+            else:
+                
+                nume = np.mean(group_temp.iloc[i][rep_lst_agg[experimental_index - 1] : rep_lst_agg[experimental_index]])
+                
+            ratio = nume / denom 
+            
+            ratio_lst[i] = ratio
+            
+            i += 1
+        
+        return class_lst, ratio_lst
+
+
+
+
+
+    def calculate_saturated_unsaturated_chain_number(mol_structure):
+            
+        a = mol_structure.split('(')
+        
+        b = a[1][:-1]
+        
+        c = b.split('/')
+        
+        sat_chain = 0
+        
+        unsat_chain = 0
+        
+        for item in c:
+            
+            d = item.split(':')[-1]
+            
+            if d.isnumeric():
+                
+                d = int(d)
+            
+                if d == 0:
+                
+                    sat_chain += 1 
+                
+                else:
+                
+                    unsat_chain += 1
+                    
+            else:
+                
+                if '0' in d:
+                    
+                    sat_chain += 1
+                    
+                else:
+                    
+                    unsat_chain += 1
+        
+        return sat_chain, unsat_chain
+    
+    
+    
+    
+    
+    def calculate_saturation_ratio(dataframe, class_lst):
+    
+        dataframe['total_sat'] = dataframe['saturation_comb'].apply(lambda x: x[0])
+        
+        dataframe['total_unsat'] = dataframe['saturation_comb'].apply(lambda x: x[1])
+        
+        group_dataframe = dataframe.groupby('ClassKey')[['total_sat', 'total_unsat']].sum()
+        
+        group_dataframe['saturation_ratio'] = group_dataframe[['total_sat', 'total_unsat']].apply(lambda x: x[0]/(x[0]+x[1]), axis = 1)
+        
+        sat_ratio_lst = group_dataframe['saturation_ratio'].tolist()
+        
+        return sat_ratio_lst
+
+
+
+
+
+    def plot_total_abundance(X, cond_lst, rep_lst):
+    
+        view_abundance_chart = st.checkbox("View Total Abundance Bar Charts")
+        
+        if view_abundance_chart: 
+        
+            temp = X.copy()
+            
+            total_reps = sum(rep_lst)
+            
+            rep_lst_agg = build_rep_lst_agg(rep_lst)
+            
+            group_temp = temp.groupby('ClassKey')[["MeanArea[s" + str(i+1) + ']' for i in range(total_reps)]].sum()
+            
+            class_lst = group_temp.index.tolist()
+            
+            for cond in cond_lst:
+                
+                index = cond_lst.index(cond)
+                
+                if index == 0:
+                
+                    group_temp["mean_AUC_" + cond] = group_temp[["MeanArea[s" + str(i+1) + ']' for i in range(rep_lst_agg[0])]].apply(lambda x: np.mean(x), axis = 1)
+                    
+                    group_temp["std_AUC_" + cond] = group_temp[["MeanArea[s" + str(i+1) + ']' for i in range(rep_lst_agg[0])]].apply(lambda x: np.std(x), axis = 1)
+                    
+                else:
+                    
+                    group_temp["mean_AUC_" + cond] = group_temp[["MeanArea[s" + str(i+1) + "]" for i in range(rep_lst_agg[index - 1], rep_lst_agg[index])]]\
+                                 .apply(lambda x: np.mean(x), axis = 1)
+                                 
+                    group_temp["std_AUC_" + cond] = group_temp[["MeanArea[s" + str(i+1) + "]" for i in range(rep_lst_agg[index - 1], rep_lst_agg[index])]]\
+                                 .apply(lambda x: np.std(x), axis = 1)
+            
+            for cond in cond_lst:
+                
+                auc = group_temp['mean_AUC_' + cond].tolist()
+                
+                std = group_temp['std_AUC_' + cond].tolist()
+                
+                log_auc = np.log10(auc)
+                
+                log_std = [(np.log10(auc[i]+std[i]) - np.log10(auc[i]-std[i])) for i in range(len(auc))] 
+                
+                y_pos = np.arange(len(class_lst))
+                
+                plt.rcdefaults()
+                fig, ax = plt.subplots()
+                
+                ax.barh(y_pos, log_auc, xerr=log_std, align='center')
+                ax.set_yticks(y_pos)
+                ax.set_yticklabels(class_lst)
+                ax.invert_yaxis()  # labels read top-to-bottom
+                ax.set_xlabel('log10(Total AUC) averaged over all replicates')
+                ax.set_ylabel('Lipid Class')
+                ax.set_title('Total Abundance Bar Chart - ' + cond)
+                
+                st.pyplot(fig)
+                
+                abundance_df = pd.DataFrame({"class": class_lst, "total_AUC": log_auc, "total_AUC_STDV": log_std})
+                
+                csv_download = convert_df(abundance_df)
+                            
+                st.download_button(
+                    
+                                label="Download Data",
+                                
+                                data=csv_download,
+                                
+                                file_name='abundance_bar_chart.csv',
+                                
+                                mime='text/csv')
+                
+                st.write('------------------------------------------------------------------------------------------------')
+    
+        return
 
 ##########################################################################################################################################
 # the main code of the app 
@@ -2395,6 +2757,20 @@ def app():
                     X, rep_lst, cond_lst = remove_bad_sample(X, rep_lst, cond_lst) # cleaned data
                     
                 st.subheader("2.2) Analyze Data")
+                
+                expand_abundance_bar_chart = st.expander("Class Abundance Bar Chart")
+                
+                with expand_abundance_bar_chart:
+                    
+                    st.markdown("""
+                                
+                                For each condition, the following bar charts show the total abundance of each lipid class in log scale.
+                                The total abundance of a class is computed by summing the abundances of all the lipid species belonging 
+                                to that class.   
+                                
+                                """)
+                                
+                    plot_total_abundance(X, cond_lst, rep_lst)
                     
                 expand_vol_plot = st.expander("Volcano Plots - Test Hypothesis")
                 
@@ -2460,3 +2836,27 @@ def app():
                                 """)
                     
                     saturation_level_plot(X, cond_lst, rep_lst)
+                    
+                expand_pathway_plot = st.expander("Lipid Pathway Visualization")
+                    
+                with expand_pathway_plot:
+                        
+                    st.markdown("""
+                                    
+                                    The following is a visualization of lipidomic pathways. Each solid circle corresponds to a lipid class. 
+                                    The size of each solid circle is set by the ratio of 
+                                    the total abundance of the experimental group to that of the control group. Total abundance of a class is 
+                                    computed by summing the abundances of all the lipid species belonging to that class averaged over
+                                    all the replicates. 
+                                    
+                                    Size equal one means 
+                                    the total abundance of both control and experimental groups is equal. A black circle with no fill and size 
+                                    equal one is plotted on top of each solid circle to make the comparison more convenient. 
+                                    
+                                    The color of each 
+                                    solid circle is set by the ratio of the total saturated fatty acid chains to the total fatty acid chains 
+                                    (saturated and unsaturated).       
+                                    
+                                    """)
+                        
+                    plot_pathway(X, cond_lst, rep_lst)

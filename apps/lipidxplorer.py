@@ -1938,6 +1938,87 @@ def app():
                     X['PRECURSORINTENSITY[' + sample + ']'] = X['PRECURSORINTENSITY[' + sample + ']'].apply(lambda x: impute_value if x<=0 else x)
             
         return X
+    
+    
+    
+    
+    
+    def plot_total_abundance(X, cond_lst, rep_lst):
+        
+        view_abundance_chart = st.checkbox("View Total Abundance Bar Charts")
+        
+        if view_abundance_chart: 
+        
+            temp = X.copy()
+            
+            total_reps = sum(rep_lst)
+            
+            rep_lst_agg = build_rep_lst_agg(rep_lst)
+            
+            group_temp = temp.groupby('CLASS')[["PRECURSORINTENSITY[s" + str(i+1) + ']' for i in range(total_reps)]].sum()
+            
+            class_lst = group_temp.index.tolist()
+            
+            for cond in cond_lst:
+                
+                index = cond_lst.index(cond)
+                
+                if index == 0:
+                
+                    group_temp["mean_AUC_" + cond] = group_temp[["PRECURSORINTENSITY[s" + str(i+1) + ']' for i in range(rep_lst_agg[0])]].apply(lambda x: np.mean(x), axis = 1)
+                    
+                    group_temp["std_AUC_" + cond] = group_temp[["PRECURSORINTENSITY[s" + str(i+1) + ']' for i in range(rep_lst_agg[0])]].apply(lambda x: np.std(x), axis = 1)
+                    
+                else:
+                    
+                    group_temp["mean_AUC_" + cond] = group_temp[["PRECURSORINTENSITY[s" + str(i+1) + "]" for i in range(rep_lst_agg[index - 1], rep_lst_agg[index])]]\
+                                 .apply(lambda x: np.mean(x), axis = 1)
+                                 
+                    group_temp["std_AUC_" + cond] = group_temp[["PRECURSORINTENSITY[s" + str(i+1) + "]" for i in range(rep_lst_agg[index - 1], rep_lst_agg[index])]]\
+                                 .apply(lambda x: np.std(x), axis = 1)
+            
+            for cond in cond_lst:
+                
+                auc = group_temp['mean_AUC_' + cond].tolist()
+                
+                std = group_temp['std_AUC_' + cond].tolist()
+                
+                log_auc = np.log10(auc)
+                
+                log_std = [(np.log10(auc[i]+std[i]) - np.log10(auc[i]-std[i])) for i in range(len(auc))] 
+                
+                y_pos = np.arange(len(class_lst))
+                
+                plt.rcdefaults()
+                fig, ax = plt.subplots()
+                
+                ax.barh(y_pos, log_auc, xerr=log_std, align='center')
+                ax.set_yticks(y_pos)
+                ax.set_yticklabels(class_lst)
+                ax.invert_yaxis()  # labels read top-to-bottom
+                ax.set_xlabel('log10(Total AUC) averaged over all replicates')
+                ax.set_ylabel('Lipid Class')
+                ax.set_title('Total Abundance Bar Chart - ' + cond)
+                
+                st.pyplot(fig)
+                
+                abundance_df = pd.DataFrame({"class": class_lst, "total_AUC": log_auc, "total_AUC_STDV": log_std})
+                
+                csv_download = convert_df(abundance_df)
+                            
+                st.download_button(
+                    
+                                label="Download Data",
+                                
+                                data=csv_download,
+                                
+                                file_name='abundance_bar_chart.csv',
+                                
+                                mime='text/csv')
+                
+                st.write('------------------------------------------------------------------------------------------------')
+
+        return 
 
 ##########################################################################################################################################
 # the main code of the app 
@@ -2216,6 +2297,20 @@ def app():
                     X = normalize_auc(X, intsta_df, rep_lst)
                     
                 st.subheader("2.3) Analyze Data")
+                
+                expand_abundance_bar_chart = st.expander("Class Abundance Bar Chart")
+                
+                with expand_abundance_bar_chart:
+                    
+                    st.markdown("""
+                                
+                                For each condition, the following bar charts show the total abundance of each lipid class in log scale.
+                                The total abundance of a class is computed by summing the abundances of all the lipid species belonging 
+                                to that class. 
+                                
+                                """)
+                                
+                    plot_total_abundance(X, cond_lst, rep_lst)
                     
                 expand_vol_plot = st.expander("Volcano Plots - Test Hypothesis")
                 
