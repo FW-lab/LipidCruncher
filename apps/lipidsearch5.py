@@ -70,7 +70,7 @@ def app():
     @st.cache
     def csv_to_df(dataset):
         
-        return pd.read_csv(lipid_search.name, error_bad_lines=False)
+        return pd.read_csv(lipid_search.name, error_bad_lines=False, encoding = "ISO-8859-1")
 
 
 
