@@ -1,4 +1,3 @@
-import csv
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -27,6 +26,8 @@ def app():
                 
                 df = txt_to_df(lipid_search.name)
                 
+                #df, intsta_df = extract_internal_standards(df)
+                
                 cols = df.columns.values.tolist()
                 
                 if ('LipidMolec' in cols) and ('ClassKey' in cols) and ('FAKey' in cols) and ('CalcMass in cols') and ('BaseRt' in cols):
@@ -43,6 +44,8 @@ def app():
                 
                 df = csv_to_df(lipid_search.name)
                 
+                #df, intsta_df = extract_internal_standards(df)
+                
                 cols = df.columns.values.tolist()
                 
                 if ('LipidMolec' in cols) and ('ClassKey' in cols) and ('FAKey' in cols) and ('CalcMass in cols') and ('BaseRt' in cols):
@@ -54,11 +57,37 @@ def app():
                     st.sidebar.error('This is not a valid LipidSearch dataset!')
                     
                     return None
+                
+                
+                
+                
+
+# function to extract the internal standards dataframe from the uploaded dataset 
+    def extract_internal_standards(df):
+    
+        mol_lst = df['LipidMolec'].values.tolist()
+        
+        intsta_lst = []
+        
+        for ele in mol_lst:
+            
+            #ele_split = str(ele).split(' ')
+            
+            if '(s)' in ele:
+                
+                index = mol_lst.index(ele)
+                
+                intsta_lst.append(index)
+                
+        intsta_df = df.iloc[intsta_lst, :]
+        
+        df.drop(intsta_lst,0,inplace=True) # removes the internal standard rows from the dataset
+            
+        return df, intsta_df
             
             
             
             
-    @st.cache
     def txt_to_df(dataset):
         
         return pd.read_csv(lipid_search.name, delimiter = "\t", error_bad_lines=False)
@@ -480,11 +509,19 @@ def app():
             
             X = X[['LipidMolec', 'ClassKey', 'FAKey', 'CalcMass', 'BaseRt'] + ['MeanArea[s' + str(i+1) + ']' for i in range(total_reps)]]
             
+            # extracting internal standards 
+            
+            X, intsta_df = extract_internal_standards(X)
+            
             #third filter: minimum abundance grade 
         
             X = build_abundance_grade_filter(X, rep_lst, cond_lst, filtered_conds, passing_abundance_grade)
             
             # organizing and printing the dataset
+            
+            X.reset_index(inplace=True)
+            
+            X.drop(['index'], axis=1, inplace=True) # drops an irrelevant column
             
             cleaned_data = st.checkbox("View Cleaned Data")
             
@@ -522,6 +559,43 @@ def app():
                                 data=csv_download,
                                 
                                 file_name='log_transformed_cleaned_data.csv',
+                                
+                                mime='text/csv')
+                
+                st.write('------------------------------------------------------------------------------------------------')
+                
+                st.write('View the internal standards dataset in the conventional format:')
+                
+                st.write(intsta_df)
+            
+                csv_download = convert_df(intsta_df)
+                            
+                st.download_button(
+                                label="Download Data",
+                                
+                                data=csv_download,
+                                
+                                file_name='internal_standards.csv',
+                                
+                                mime='text/csv')
+            
+                st.write('------------------------------------------------------------------------------------------------')
+            
+                st.write('View the internal standards dataset in the log-transformed format:')
+                
+                log_intsta_df = log_transform_df(intsta_df, rep_lst)
+            
+                st.write(log_intsta_df)
+            
+                csv_download = convert_df(log_intsta_df)
+                            
+                st.download_button(
+                    
+                                label="Download Data",
+                                
+                                data=csv_download,
+                                
+                                file_name='log_transformed_intsta_df.csv',
                                 
                                 mime='text/csv')
             
@@ -595,7 +669,7 @@ def app():
     
     
  #function that computes the total abundance grade for each lipid species
-    @st.cache
+    @st.cache 
     def abundance_level_calculator(intensities, passing_abundance_grade): 
             
             '''
@@ -1659,7 +1733,7 @@ def app():
     
     # calculate fold change 
     @st.cache
-    def fc_calculator(num_1, num_2): 
+        def fc_calculator(num_1, num_2): 
         
         non_zero_num_1 = [num for num in num_1 if num > 0]
         
@@ -1734,7 +1808,7 @@ def app():
     
     
     
-    
+        
     def saturation_level_plot_bar(dataframe, rep_lst_agg, cond_lst):
     
         for lipid_class in dataframe['ClassKey'].unique():
