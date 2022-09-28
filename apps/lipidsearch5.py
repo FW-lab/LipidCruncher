@@ -1733,7 +1733,7 @@ def app():
     
     # calculate fold change 
     @st.cache
-        def fc_calculator(num_1, num_2): 
+    def fc_calculator(num_1, num_2): 
         
         non_zero_num_1 = [num for num in num_1 if num > 0]
         
