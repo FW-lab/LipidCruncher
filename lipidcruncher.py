@@ -5,7 +5,7 @@ from apps import lipidsearch4, lipidsearch5, lipidxplorer # import modules
 app = MultiApp()
 
 st.markdown("""
-# LipidCruncher
+# LipidCruncher.
 
 In the context of lipidomics, the output of mass spectrometry is the relative abundance of the lipid species that make up the sample under study. 
 This output is in the form of a spectrum in which the peaks represent an identified lipid species and the area underneath each peak reperesnts the relative 
