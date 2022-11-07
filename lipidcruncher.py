@@ -15,12 +15,17 @@ They usually have a control group where nothing is changed and one or more exper
 (i.g. a certain gene is knocked out or is over expressed). They prepare multiple replicates for each group and run them though mass spectrometer. 
 One of the things that they are interested in is whether there is a significant difference in the lipid profile between 
 the control group and the experimental group(s).
+
+
 In the context of lipidomics, the output of mass spectrometry is the relative abundance of the lipid species that make up the sample under study. 
 This output is in the form of a spectrum in which the peaks represent an identified lipid species and the area underneath each peak represents 
 the relative abundance of the corresponding lipid species. 
 We use two pieces of software that turn this spectrum into a lipidomics dataset: LipidSearch and LipidXplorer. 
 We have built LipidCruncher which is a web-based tool that allows the biologists to perform lipidomics analysis on 
 their LipidSearch and LipidXplorer datasets.  
+
+The following map shows the lipidomics workflow in our lab:
+
 
 """)
 
