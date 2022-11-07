@@ -13,11 +13,10 @@ This output is in the form of a spectrum in which the peaks represent an identif
 abundance of the corresponding lipid species. There are two pieces of software that turn this spectrum into a lipidomics dataset: LipidSearch and LipidXplorer.
 LipidCruncher is a web app that allows the user to perform lipidomics analysis on the LipidSearch and LipidXplorer datasets. 
 
+""")
 
 image = Image.open('fig1.png')
 st.image(image)
-
-""")
 
 # Add all your application here
 app.add_app("LipidSearch 4.1 Module", lipidsearch4.app)
