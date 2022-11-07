@@ -15,7 +15,7 @@ LipidCruncher is a web app that allows the user to perform lipidomics analysis o
 
 """)
 
-image = Image.open('fig1.jpg')
+image = Image.open('fig1.png')
 st.image(image)
 
 # Add all your application here
